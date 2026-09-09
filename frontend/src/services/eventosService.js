@@ -1,32 +1,45 @@
-import { supabase } from './supabaseClient'
+import api from './api'
 
-export const eventosService = {
-  async listar() {
-    const { data, error } = await supabase.from('eventos').select('*')
-    if (error) throw error
+export async function getEventos() {
+  try {
+    const { data } = await api.get('/eventos')
     return data
-  },
+  } catch (error) {
+    throw error
+  }
+}
 
-  async obtenerPorId(id) {
-    const { data, error } = await supabase.from('eventos').select('*').eq('id', id).single()
-    if (error) throw error
+export async function getEventoPorId(id) {
+  try {
+    const { data } = await api.get(`/eventos/${id}`)
     return data
-  },
+  } catch (error) {
+    throw error
+  }
+}
 
-  async crear(evento) {
-    const { data, error } = await supabase.from('eventos').insert(evento).select().single()
-    if (error) throw error
+export async function crearEvento(datos) {
+  try {
+    const { data } = await api.post('/eventos', datos)
     return data
-  },
+  } catch (error) {
+    throw error
+  }
+}
 
-  async actualizar(id, updates) {
-    const { data, error } = await supabase.from('eventos').update(updates).eq('id', id).select().single()
-    if (error) throw error
+export async function actualizarEvento(id, datos) {
+  try {
+    const { data } = await api.put(`/eventos/${id}`, datos)
     return data
-  },
+  } catch (error) {
+    throw error
+  }
+}
 
-  async eliminar(id) {
-    const { error } = await supabase.from('eventos').delete().eq('id', id)
-    if (error) throw error
-  },
+export async function eliminarEvento(id) {
+  try {
+    await api.delete(`/eventos/${id}`)
+  } catch (error) {
+    throw error
+  }
 }
