@@ -6,27 +6,11 @@ const router = Router()
 router.get('/', async (_req, res) => {
   try {
     const { data, error } = await supabase
-      .from('eventos')
-      .select('*, clientes(nombre, correo, telefono), paquetes(nombre)')
-      .order('fecha', { ascending: true })
+      .from('paquetes')
+      .select('*')
+      .order('nombre', { ascending: true })
 
     if (error) throw new Error(error.message)
-    res.json(data)
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-})
-
-router.get('/:id', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('eventos')
-      .select('*, clientes(nombre, correo, telefono), paquetes(nombre)')
-      .eq('id', req.params.id)
-      .single()
-
-    if (error) throw new Error(error.message)
-    if (!data) return res.status(404).json({ error: 'Evento no encontrado' })
     res.json(data)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -36,7 +20,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('eventos')
+      .from('paquetes')
       .insert(req.body)
       .select()
       .single()
@@ -51,7 +35,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('eventos')
+      .from('paquetes')
       .update(req.body)
       .eq('id', req.params.id)
       .select()
@@ -67,7 +51,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { error } = await supabase
-      .from('eventos')
+      .from('paquetes')
       .delete()
       .eq('id', req.params.id)
 

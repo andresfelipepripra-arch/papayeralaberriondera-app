@@ -1,32 +1,47 @@
-import { supabase } from './supabaseClient'
+import api from './api'
 
 export const clientesService = {
-  async listar() {
-    const { data, error } = await supabase.from('clientes').select('*')
-    if (error) throw error
-    return data
+  async getTodos() {
+    try {
+      const { data } = await api.get('/clientes')
+      return data
+    } catch (error) {
+      throw error
+    }
   },
 
-  async obtenerPorId(id) {
-    const { data, error } = await supabase.from('clientes').select('*').eq('id', id).single()
-    if (error) throw error
-    return data
+  async getPorId(id) {
+    try {
+      const { data } = await api.get(`/clientes/${id}`)
+      return data
+    } catch (error) {
+      throw error
+    }
   },
 
-  async crear(cliente) {
-    const { data, error } = await supabase.from('clientes').insert(cliente).select().single()
-    if (error) throw error
-    return data
+  async crear(datos) {
+    try {
+      const { data } = await api.post('/clientes', datos)
+      return data
+    } catch (error) {
+      throw error
+    }
   },
 
-  async actualizar(id, updates) {
-    const { data, error } = await supabase.from('clientes').update(updates).eq('id', id).select().single()
-    if (error) throw error
-    return data
+  async actualizar(id, datos) {
+    try {
+      const { data } = await api.put(`/clientes/${id}`, datos)
+      return data
+    } catch (error) {
+      throw error
+    }
   },
 
   async eliminar(id) {
-    const { error } = await supabase.from('clientes').delete().eq('id', id)
-    if (error) throw error
+    try {
+      await api.delete(`/clientes/${id}`)
+    } catch (error) {
+      throw error
+    }
   },
 }

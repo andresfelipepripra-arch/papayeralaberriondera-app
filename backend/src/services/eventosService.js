@@ -19,7 +19,7 @@ export async function listarEventosProximos(dias = DIAS_ANTICIPACION_DEFAULT) {
 
   const { data, error } = await supabase
     .from('eventos')
-    .select('*, clientes (nombre, email)')
+    .select('*, clientes (nombre, correo)')
     .gte('fecha', ahora)
     .lte('fecha', fechaLimite.toISOString())
     .eq('correo_recordatorio_enviado', false)

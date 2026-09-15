@@ -16,7 +16,7 @@ export async function ejecutarRecordatorios() {
 
     for (const evento of eventos) {
       const cliente = evento.clientes
-      if (!cliente || !cliente.email) continue
+      if (!cliente || !cliente.correo) continue
 
       try {
         await enviarRecordatorio({ cliente, evento })

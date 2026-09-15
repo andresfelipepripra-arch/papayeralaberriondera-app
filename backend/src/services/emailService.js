@@ -27,7 +27,7 @@ export async function enviarRecordatorio({ cliente, evento }) {
 
   return resend.emails.send({
     from: EMAIL_FROM,
-    to: [cliente.email],
+    to: [cliente.correo],
     subject: `Recordatorio de tu evento - ${fecha}`,
     html,
   })
