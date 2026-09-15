@@ -9,7 +9,14 @@ import { verificarAuth } from './middleware/verificarAuth.js'
 
 const app = express()
 
-app.use(cors())
+const origenesPermitidos = [
+  'http://localhost:5173',
+  'https://papayeralaberriondera-app.vercel.app'
+]
+
+app.use(cors({
+  origin: origenesPermitidos
+}))
 app.use(express.json())
 
 app.use('/eventos', verificarAuth, eventosRoutes)
