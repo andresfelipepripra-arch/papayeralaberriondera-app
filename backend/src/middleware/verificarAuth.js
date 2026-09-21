@@ -15,7 +15,13 @@ export async function verificarAuth(req, res, next) {
       return res.status(401).json({ error: 'No autorizado' })
     }
 
-    req.usuario = data.user
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', data.user.id)
+      .single()
+
+    req.usuario = { ...data.user, rol: perfil?.rol ?? 'operador' }
     next()
   } catch (error) {
     return res.status(401).json({ error: 'No autorizado' })

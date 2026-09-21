@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import { supabase } from '../config/supabaseClient.js'
+import { requiereAdmin } from '../middleware/requiereAdmin.js'
 
 const router = Router()
 
-router.post('/', async (req, res) => {
+router.post('/', requiereAdmin, async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
@@ -18,6 +19,13 @@ router.post('/', async (req, res) => {
     })
 
     if (error) throw new Error(error.message)
+
+    const { error: errorPerfil } = await supabase
+      .from('perfiles')
+      .insert({ id: data.user.id })
+
+    if (errorPerfil) throw new Error(errorPerfil.message)
+
     res.status(201).json(data.user)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -37,7 +45,7 @@ router.get('/', async (_req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requiereAdmin, async (req, res) => {
   try {
     const { error } = await supabase.auth.admin.deleteUser(req.params.id)
 
