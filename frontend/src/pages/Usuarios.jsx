@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   crearUsuario,
   eliminarUsuario,
@@ -10,8 +11,6 @@ export default function Usuarios() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [mensaje, setMensaje] = useState(null)
 
   const cargar = async () => {
     setLoading(true)
@@ -20,7 +19,7 @@ export default function Usuarios() {
       setUsuarios(data)
     } catch (err) {
       console.error(err)
-      setError('Error al cargar los usuarios')
+      toast.error('Error al cargar los usuarios')
     } finally {
       setLoading(false)
     }
@@ -32,30 +31,26 @@ export default function Usuarios() {
 
   const handleCrear = async (e) => {
     e.preventDefault()
-    setError(null)
-    setMensaje(null)
     try {
       await crearUsuario({ email, password })
-      setMensaje(`Usuario creado: ${email}`)
+      toast.success(`Usuario creado: ${email}`)
       setEmail('')
       setPassword('')
       await cargar()
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al crear el usuario')
+      toast.error(err.response?.data?.error || 'Error al crear el usuario')
     }
   }
 
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Eliminar este usuario?')) return
-    setError(null)
-    setMensaje(null)
     try {
       await eliminarUsuario(id)
       setUsuarios((prev) => prev.filter((u) => u.id !== id))
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al eliminar el usuario')
+      toast.error(err.response?.data?.error || 'Error al eliminar el usuario')
     }
   }
 
@@ -83,9 +78,6 @@ export default function Usuarios() {
         />
         <button type="submit">Crear usuario</button>
       </form>
-
-      {mensaje && <p style={{ color: 'green' }}>{mensaje}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {loading ? (
         <p>Cargando usuarios...</p>

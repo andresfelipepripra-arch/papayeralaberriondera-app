@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { paquetesService } from '../services/paquetesService'
+import { formatearPrecio } from '../utils/formatters'
 
 const vacio = { nombre: '', descripcion: '', precio: '', duracion_horas: '', incluye: '' }
 
@@ -8,8 +10,6 @@ export default function Paquetes() {
   const [form, setForm] = useState(vacio)
   const [editandoId, setEditandoId] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [mensaje, setMensaje] = useState(null)
 
   const cargar = async () => {
     setLoading(true)
@@ -18,7 +18,7 @@ export default function Paquetes() {
       setPaquetes(data)
     } catch (err) {
       console.error(err)
-      setError('Error al cargar los paquetes')
+      toast.error('Error al cargar los paquetes')
     } finally {
       setLoading(false)
     }
@@ -34,8 +34,6 @@ export default function Paquetes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
-    setMensaje(null)
     try {
       const payload = {
         nombre: form.nombre,
@@ -46,17 +44,17 @@ export default function Paquetes() {
       }
       if (editandoId) {
         await paquetesService.actualizar(editandoId, payload)
-        setMensaje('Paquete actualizado')
+        toast.success('Paquete actualizado')
       } else {
         await paquetesService.crear(payload)
-        setMensaje('Paquete creado')
+        toast.success('Paquete creado')
       }
       setForm(vacio)
       setEditandoId(null)
       await cargar()
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al guardar el paquete')
+      toast.error(err.response?.data?.error || 'Error al guardar el paquete')
     }
   }
 
@@ -73,14 +71,12 @@ export default function Paquetes() {
 
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Eliminar este paquete?')) return
-    setError(null)
-    setMensaje(null)
     try {
       await paquetesService.eliminar(id)
       setPaquetes((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al eliminar el paquete')
+      toast.error(err.response?.data?.error || 'Error al eliminar el paquete')
     }
   }
 
@@ -107,9 +103,6 @@ export default function Paquetes() {
         <button type="submit">{editandoId ? 'Actualizar' : 'Crear'}</button>
       </form>
 
-      {mensaje && <p style={{ color: 'green' }}>{mensaje}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
       {loading ? (
         <p>Cargando paquetes...</p>
       ) : (
@@ -126,7 +119,7 @@ export default function Paquetes() {
             {paquetes.map((paquete) => (
               <tr key={paquete.id}>
                 <td style={estiloCelda}>{paquete.nombre}</td>
-                <td style={estiloCelda}>${paquete.precio}</td>
+                <td style={estiloCelda}>{formatearPrecio(paquete.precio)}</td>
                 <td style={estiloCelda}>{paquete.duracion_horas ? `${paquete.duracion_horas} h` : '—'}</td>
                 <td style={estiloCelda}>
                   <button onClick={() => handleEditar(paquete)}>Editar</button>{' '}

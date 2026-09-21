@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getEventoPorId } from '../../services/eventosService'
+import { eliminarEvento, getEventoPorId } from '../../services/eventosService'
+import { formatearFechaHora } from '../../utils/formatters'
 
 export default function EventoDetalle() {
   const { id } = useParams()
@@ -26,6 +27,17 @@ export default function EventoDetalle() {
     cargar()
   }, [id])
 
+  const handleEliminar = async () => {
+    if (!window.confirm('¿Eliminar este evento?')) return
+    try {
+      await eliminarEvento(id)
+      navigate('/eventos')
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.error || 'Error al eliminar el evento')
+    }
+  }
+
   if (loading) return <p>Cargando evento...</p>
   if (error) return <p>{error}</p>
   if (!evento) return <p>No se encontró el evento</p>
@@ -42,7 +54,7 @@ export default function EventoDetalle() {
         <dd>{evento.paquetes?.nombre ?? 'Sin paquete'}</dd>
 
         <dt style={estiloTitulo}>Fecha</dt>
-        <dd>{new Date(evento.fecha).toLocaleString('es-CO')}</dd>
+        <dd>{formatearFechaHora(evento.fecha)}</dd>
 
         <dt style={estiloTitulo}>Ubicación</dt>
         <dd>{evento.ubicacion ?? '—'}</dd>
@@ -58,6 +70,7 @@ export default function EventoDetalle() {
       </dl>
 
       <button onClick={() => navigate(`/eventos/${evento.id}/editar`)}>Editar</button>{' '}
+      <button onClick={handleEliminar}>Eliminar</button>{' '}
       <button onClick={() => navigate('/eventos')}>Volver a eventos</button>
     </div>
   )

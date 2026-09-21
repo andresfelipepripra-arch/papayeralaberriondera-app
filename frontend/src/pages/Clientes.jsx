@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { clientesService } from '../services/clientesService'
 
 const vacio = { nombre: '', telefono: '', correo: '' }
@@ -8,8 +9,7 @@ export default function Clientes() {
   const [form, setForm] = useState(vacio)
   const [editandoId, setEditandoId] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [mensaje, setMensaje] = useState(null)
+  const [busqueda, setBusqueda] = useState('')
 
   const cargar = async () => {
     setLoading(true)
@@ -18,7 +18,7 @@ export default function Clientes() {
       setClientes(data)
     } catch (err) {
       console.error(err)
-      setError('Error al cargar los clientes')
+      toast.error('Error al cargar los clientes')
     } finally {
       setLoading(false)
     }
@@ -34,8 +34,6 @@ export default function Clientes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
-    setMensaje(null)
     try {
       const payload = {
         nombre: form.nombre,
@@ -44,17 +42,17 @@ export default function Clientes() {
       }
       if (editandoId) {
         await clientesService.actualizar(editandoId, payload)
-        setMensaje('Cliente actualizado')
+        toast.success('Cliente actualizado')
       } else {
         await clientesService.crear(payload)
-        setMensaje('Cliente creado')
+        toast.success('Cliente creado')
       }
       setForm(vacio)
       setEditandoId(null)
       await cargar()
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al guardar el cliente')
+      toast.error(err.response?.data?.error || 'Error al guardar el cliente')
     }
   }
 
@@ -69,16 +67,19 @@ export default function Clientes() {
 
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Eliminar este cliente?')) return
-    setError(null)
-    setMensaje(null)
     try {
       await clientesService.eliminar(id)
       setClientes((prev) => prev.filter((c) => c.id !== id))
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al eliminar el cliente')
+      toast.error(err.response?.data?.error || 'Error al eliminar el cliente')
     }
   }
+
+  const textoBusqueda = busqueda.trim().toLowerCase()
+  const clientesFiltrados = clientes.filter((cliente) =>
+    cliente.nombre.toLowerCase().includes(textoBusqueda)
+  )
 
   return (
     <div>
@@ -97,11 +98,20 @@ export default function Clientes() {
         <button type="submit">{editandoId ? 'Actualizar' : 'Crear'}</button>
       </form>
 
-      {mensaje && <p style={{ color: 'green' }}>{mensaje}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <input
+        type="text"
+        placeholder="Buscar por nombre"
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        style={{ ...estiloInput, width: '100%', boxSizing: 'border-box', marginBottom: '16px' }}
+      />
 
       {loading ? (
         <p>Cargando clientes...</p>
+      ) : clientes.length === 0 ? (
+        <p>No hay clientes registrados</p>
+      ) : clientesFiltrados.length === 0 ? (
+        <p>No hay clientes que coincidan con la búsqueda</p>
       ) : (
         <table style={estiloTabla}>
           <thead>
@@ -113,7 +123,7 @@ export default function Clientes() {
             </tr>
           </thead>
           <tbody>
-            {clientes.map((cliente) => (
+            {clientesFiltrados.map((cliente) => (
               <tr key={cliente.id}>
                 <td style={estiloCelda}>{cliente.nombre}</td>
                 <td style={estiloCelda}>{cliente.telefono ?? '—'}</td>

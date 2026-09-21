@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getEventos } from '../services/eventosService'
 import { clientesService } from '../services/clientesService'
 import { paquetesService } from '../services/paquetesService'
+import { formatearFechaHora } from '../utils/formatters'
 
 export default function Dashboard() {
   const [eventos, setEventos] = useState([])
@@ -68,7 +69,7 @@ export default function Dashboard() {
           {proximos5.map((evento) => (
             <li key={evento.id}>
               <strong>{evento.clientes?.nombre ?? 'Sin cliente'}</strong> —{' '}
-              {new Date(evento.fecha).toLocaleString('es-CO')}
+              {formatearFechaHora(evento.fecha)}
             </li>
           ))}
         </ul>

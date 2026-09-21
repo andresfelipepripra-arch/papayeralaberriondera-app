@@ -1,25 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
     setLoading(true)
 
     try {
       await signIn(email, password)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(err.message || 'No se pudo iniciar sesión')
+      toast.error(err.message || 'No se pudo iniciar sesión')
       setLoading(false)
     }
   }
@@ -54,7 +53,6 @@ export default function Login() {
             style={estiloInput}
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ width: '100%' }}>
           {loading ? 'Iniciando sesión...' : 'Ingresar'}
         </button>

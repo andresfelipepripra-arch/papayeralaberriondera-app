@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import {
   actualizarEvento,
   crearEvento,
@@ -27,7 +28,6 @@ export default function EventoForm() {
   })
   const [cargandoForm, setCargandoForm] = useState(esEdicion)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
     const inicializar = async () => {
@@ -53,7 +53,7 @@ export default function EventoForm() {
         }
       } catch (err) {
         console.error(err)
-        setError('Error al cargar los datos del formulario')
+        toast.error('Error al cargar los datos del formulario')
       } finally {
         setCargandoForm(false)
       }
@@ -68,12 +68,34 @@ export default function EventoForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
+
+    if (!form.cliente_id) {
+      toast.error('Selecciona un cliente')
+      return
+    }
+
+    if (!form.paquete_id) {
+      toast.error('Selecciona un paquete')
+      return
+    }
+
+    if (!esEdicion) {
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      const fechaSeleccionada = new Date(form.fecha)
+      fechaSeleccionada.setHours(0, 0, 0, 0)
+
+      if (fechaSeleccionada < hoy) {
+        toast.error('La fecha no puede ser anterior a hoy')
+        return
+      }
+    }
+
     setLoading(true)
 
     const payload = {
       cliente_id: form.cliente_id,
-      paquete_id: form.paquete_id || null,
+      paquete_id: form.paquete_id,
       fecha: new Date(form.fecha).toISOString(),
       ubicacion: form.ubicacion || null,
       estado: form.estado,
@@ -89,7 +111,7 @@ export default function EventoForm() {
       navigate('/eventos')
     } catch (err) {
       console.error(err)
-      setError(err.response?.data?.error || 'Error al guardar el evento')
+      toast.error(err.response?.data?.error || 'Error al guardar el evento')
       setLoading(false)
     }
   }
@@ -104,7 +126,7 @@ export default function EventoForm() {
         <div style={{ marginBottom: '12px' }}>
           <label htmlFor="cliente_id">Cliente</label>
           <br />
-          <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleChange} required style={estiloInput}>
+          <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleChange} style={estiloInput}>
             <option value="">Selecciona un cliente</option>
             {clientes.map((cliente) => (
               <option key={cliente.id} value={cliente.id}>{cliente.nombre}</option>
@@ -116,7 +138,7 @@ export default function EventoForm() {
           <label htmlFor="paquete_id">Paquete</label>
           <br />
           <select id="paquete_id" name="paquete_id" value={form.paquete_id} onChange={handleChange} style={estiloInput}>
-            <option value="">Sin paquete</option>
+            <option value="">Selecciona un paquete</option>
             {paquetes.map((paquete) => (
               <option key={paquete.id} value={paquete.id}>
                 {paquete.nombre} - ${paquete.precio}
@@ -174,8 +196,6 @@ export default function EventoForm() {
             style={{ ...estiloInput, width: '100%', boxSizing: 'border-box' }}
           />
         </div>
-
-        {error && <p style={{ color: 'red' }}>{error}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? 'Guardando...' : (esEdicion ? 'Actualizar' : 'Crear')}
