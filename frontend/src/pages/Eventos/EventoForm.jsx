@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   actualizarEvento,
@@ -8,8 +8,11 @@ import {
 } from '../../services/eventosService'
 import { clientesService } from '../../services/clientesService'
 import { paquetesService } from '../../services/paquetesService'
-
-const estados = ['pendiente', 'confirmado', 'realizado', 'cancelado']
+import { formatearDuracion, formatearPrecio } from '../../utils/formatters'
+import { ESTADOS, ORDEN_ESTADOS } from '../../utils/estados'
+import Panel from '../../components/ui/Panel'
+import BotonPrimario from '../../components/ui/BotonPrimario'
+import { IconoChevron } from '../../components/ui/Iconos'
 
 export default function EventoForm() {
   const { id } = useParams()
@@ -23,7 +26,7 @@ export default function EventoForm() {
     paquete_id: '',
     fecha: '',
     ubicacion: '',
-    estado: 'pendiente',
+    estado: 'confirmado',
     notas: '',
   })
   const [cargandoForm, setCargandoForm] = useState(esEdicion)
@@ -47,7 +50,7 @@ export default function EventoForm() {
             paquete_id: evento.paquete_id ?? '',
             fecha: evento.fecha ? aInputDatetimeLocal(evento.fecha) : '',
             ubicacion: evento.ubicacion ?? '',
-            estado: evento.estado ?? 'pendiente',
+            estado: evento.estado ?? 'confirmado',
             notas: evento.notas ?? '',
           })
         }
@@ -105,8 +108,10 @@ export default function EventoForm() {
     try {
       if (esEdicion) {
         await actualizarEvento(id, payload)
+        toast.success('Evento actualizado')
       } else {
         await crearEvento(payload)
+        toast.success('Evento creado')
       }
       navigate('/eventos')
     } catch (err) {
@@ -116,91 +121,137 @@ export default function EventoForm() {
     }
   }
 
-  if (cargandoForm) return <p>Cargando formulario...</p>
+  if (cargandoForm) return <p className="text-slate-400">Cargando formulario...</p>
+
+  const estiloCampo =
+    'w-full rounded-lg border border-white/5 bg-slate-800/60 px-4 py-2.5 text-sm text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30'
+  const estiloLabel = 'mb-2 block text-sm font-semibold text-slate-100'
 
   return (
-    <div style={{ maxWidth: 600 }}>
-      <h2>{esEdicion ? 'Editar evento' : 'Nuevo evento'}</h2>
+    <div className="max-w-3xl space-y-6">
+      <Link
+        to="/eventos"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition hover:text-white"
+      >
+        <IconoChevron className="size-4 rotate-180" />
+        Volver a eventos
+      </Link>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="cliente_id">Cliente</label>
-          <br />
-          <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleChange} style={estiloInput}>
-            <option value="">Selecciona un cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>{cliente.nombre}</option>
-            ))}
-          </select>
-        </div>
+      <h1 className="font-serif text-3xl font-bold text-white">{esEdicion ? 'Editar evento' : 'Nuevo evento'}</h1>
 
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="paquete_id">Paquete</label>
-          <br />
-          <select id="paquete_id" name="paquete_id" value={form.paquete_id} onChange={handleChange} style={estiloInput}>
-            <option value="">Selecciona un paquete</option>
-            {paquetes.map((paquete) => (
-              <option key={paquete.id} value={paquete.id}>
-                {paquete.nombre} - ${paquete.precio}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Panel>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cliente_id" className={estiloLabel}>
+                Cliente
+              </label>
+              <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleChange} className={estiloCampo}>
+                <option value="">Selecciona un cliente</option>
+                {clientes.map((cliente) => (
+                  <option key={cliente.id} value={cliente.id}>
+                    {cliente.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="fecha">Fecha y hora</label>
-          <br />
-          <input
-            id="fecha"
-            name="fecha"
-            type="datetime-local"
-            value={form.fecha}
-            onChange={handleChange}
-            required
-            style={estiloInput}
-          />
-        </div>
+            <div>
+              <label htmlFor="paquete_id" className={estiloLabel}>
+                Paquete
+              </label>
+              <select id="paquete_id" name="paquete_id" value={form.paquete_id} onChange={handleChange} className={estiloCampo}>
+                <option value="">Selecciona un paquete</option>
+                {paquetes.map((paquete) => (
+                  <option key={paquete.id} value={paquete.id}>
+                    {paquete.nombre} - {formatearPrecio(paquete.precio)}
+                    {formatearDuracion(paquete.duracion_horas) ? ` - ${formatearDuracion(paquete.duracion_horas)}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="ubicacion">Ubicación</label>
-          <br />
-          <input
-            id="ubicacion"
-            name="ubicacion"
-            type="text"
-            value={form.ubicacion}
-            onChange={handleChange}
-            style={estiloInput}
-          />
-        </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="fecha" className={estiloLabel}>
+                Fecha y hora
+              </label>
+              <input
+                id="fecha"
+                name="fecha"
+                type="datetime-local"
+                value={form.fecha}
+                onChange={handleChange}
+                required
+                className={estiloCampo}
+              />
+            </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="estado">Estado</label>
-          <br />
-          <select id="estado" name="estado" value={form.estado} onChange={handleChange} style={estiloInput}>
-            {estados.map((estado) => (
-              <option key={estado} value={estado}>{estado}</option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label htmlFor="ubicacion" className={estiloLabel}>
+                Ubicación
+              </label>
+              <input
+                id="ubicacion"
+                name="ubicacion"
+                type="text"
+                value={form.ubicacion}
+                onChange={handleChange}
+                className={estiloCampo}
+              />
+            </div>
+          </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <label htmlFor="notas">Notas</label>
-          <br />
-          <textarea
-            id="notas"
-            name="notas"
-            rows={3}
-            value={form.notas}
-            onChange={handleChange}
-            style={{ ...estiloInput, width: '100%', boxSizing: 'border-box' }}
-          />
-        </div>
+          <div>
+            <label className={estiloLabel}>Estado</label>
+            <div className="flex flex-wrap gap-2">
+              {ORDEN_ESTADOS.map((estado) => (
+                <button
+                  key={estado}
+                  type="button"
+                  onClick={() => setForm({ ...form, estado })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                    form.estado === estado
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  <span className={`size-1.5 rounded-full ${form.estado === estado ? 'bg-slate-950' : ESTADOS[estado].punto}`} />
+                  {ESTADOS[estado].etiqueta}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Guardando...' : (esEdicion ? 'Actualizar' : 'Crear')}
-        </button>
-      </form>
+          <div>
+            <label htmlFor="notas" className={estiloLabel}>
+              Notas
+            </label>
+            <textarea
+              id="notas"
+              name="notas"
+              rows={4}
+              value={form.notas}
+              onChange={handleChange}
+              className={estiloCampo}
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <BotonPrimario type="submit" disabled={loading}>
+              {loading ? 'Guardando...' : esEdicion ? 'Actualizar' : 'Crear evento'}
+            </BotonPrimario>
+            <button
+              type="button"
+              onClick={() => navigate('/eventos')}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Panel>
     </div>
   )
 }
@@ -210,5 +261,3 @@ function aInputDatetimeLocal(iso) {
   const local = new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60000)
   return local.toISOString().slice(0, 16)
 }
-
-const estiloInput = { width: '100%', padding: '8px', boxSizing: 'border-box' }

@@ -25,3 +25,12 @@ export async function eliminarUsuario(id) {
     throw error
   }
 }
+
+export async function cambiarRolUsuario(id, rol) {
+  try {
+    const { data } = await api.put(`/usuarios/${id}/rol`, { rol })
+    return data
+  } catch (error) {
+    throw error
+  }
+}

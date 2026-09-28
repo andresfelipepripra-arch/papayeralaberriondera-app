@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Tokens de diseño (colores, fuentes, etc.). El ámbar del diseño es el de Tailwind v3. */
+@theme {
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+}
