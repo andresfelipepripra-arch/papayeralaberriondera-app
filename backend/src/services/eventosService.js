@@ -1,6 +1,5 @@
 import { supabase } from '../config/supabaseClient.js'
-
-const DIAS_ANTICIPACION_DEFAULT = 3
+import { inicioDelDiaOperativoActualISO } from '../utils/fechas.js'
 
 export async function listarEventos() {
   const { data, error } = await supabase
@@ -12,17 +11,22 @@ export async function listarEventos() {
   return data
 }
 
-export async function listarEventosProximos(dias = DIAS_ANTICIPACION_DEFAULT) {
-  const ahora = new Date().toISOString()
+// Eventos no cancelados, desde el inicio del día operativo actual (hora
+// Colombia) hasta `maxDias` días adelante. El límite inferior es el inicio
+// del día operativo, no el instante actual, para no perder eventos de hoy
+// cuya hora ya pasó (p. ej. un evento a las 6am cuando el job corre a las
+// 8am) ni eventos de madrugada que en realidad son "la misma noche" de un
+// evento anterior. La deduplicación de envíos vive en `correos_enviados`.
+export async function listarEventosVigentes(maxDias) {
   const fechaLimite = new Date()
-  fechaLimite.setDate(fechaLimite.getDate() + dias)
+  fechaLimite.setDate(fechaLimite.getDate() + maxDias)
 
   const { data, error } = await supabase
     .from('eventos')
-    .select('*, clientes (nombre, correo)')
-    .gte('fecha', ahora)
+    .select('*, clientes (id, nombre, correo, telefono)')
+    .gte('fecha', inicioDelDiaOperativoActualISO())
     .lte('fecha', fechaLimite.toISOString())
-    .eq('correo_recordatorio_enviado', false)
+    .neq('estado', 'cancelado')
 
   if (error) throw new Error(error.message)
   return data

@@ -7,7 +7,7 @@ router.get('/', async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('eventos')
-      .select('*, clientes(nombre, correo, telefono), paquetes(nombre)')
+      .select('*, clientes(nombre, correo, telefono), paquetes(nombre, precio, duracion_horas)')
       .order('fecha', { ascending: true })
 
     if (error) throw new Error(error.message)
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('eventos')
-      .select('*, clientes(nombre, correo, telefono), paquetes(nombre)')
+      .select('*, clientes(nombre, correo, telefono, ciudad), paquetes(nombre, descripcion, precio, duracion_horas, incluye)')
       .eq('id', req.params.id)
       .single()
 

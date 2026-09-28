@@ -2,8 +2,14 @@ name: Recordatorios - envío diario
 
 on:
   schedule:
-    - cron: '0 13 * * *'
+    # Cada 10 min: además de disparar recordatorios, mantiene despierto el
+    # backend en Render (plan gratis se duerme a los ~15 min sin tráfico).
+    - cron: '*/10 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: recordatorios
+  cancel-in-progress: false
 
 jobs:
   enviar_recordatorios:

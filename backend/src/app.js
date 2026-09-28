@@ -4,6 +4,7 @@ import eventosRoutes from './routes/eventosRoutes.js'
 import paquetesRoutes from './routes/paquetesRoutes.js'
 import clientesRoutes from './routes/clientesRoutes.js'
 import usuariosRoutes from './routes/usuariosRoutes.js'
+import configuracionRoutes from './routes/configuracionRoutes.js'
 import jobsRoutes from './routes/jobsRoutes.js'
 import { verificarAuth } from './middleware/verificarAuth.js'
 
@@ -23,6 +24,7 @@ app.use('/eventos', verificarAuth, eventosRoutes)
 app.use('/paquetes', verificarAuth, paquetesRoutes)
 app.use('/clientes', verificarAuth, clientesRoutes)
 app.use('/usuarios', verificarAuth, usuariosRoutes)
+app.use('/configuracion', verificarAuth, configuracionRoutes)
 app.use('/jobs', jobsRoutes)
 
 export default app
