@@ -4,7 +4,7 @@ import { cambiarRolUsuario, crearUsuario, eliminarUsuario, getUsuarios } from '.
 import { useAuth } from '../context/AuthContext'
 import { formatearFechaHora } from '../utils/formatters'
 import { colorAvatar, inicialesDe } from '../utils/avatar'
-import Panel from '../components/ui/Panel'
+import Modal from '../components/ui/Modal'
 import InputField from '../components/ui/InputField'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import { IconoBasura, IconoEscudo, IconoMas } from '../components/ui/Iconos'
@@ -96,17 +96,26 @@ export default function Usuarios() {
           </p>
         </div>
         {esAdmin && (
-          <BotonPrimario onClick={() => setMostrarFormulario(true)} className="px-5">
+          <BotonPrimario onClick={() => setMostrarFormulario(true)}>
             <IconoMas className="size-4" />
             Nuevo usuario
           </BotonPrimario>
         )}
       </div>
 
-      {esAdmin && mostrarFormulario && (
-        <Panel titulo="Nuevo usuario" subtitulo="Se crea directamente activo, sin registro público">
-          <form onSubmit={handleCrear} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+      {esAdmin && (
+        <Modal
+          abierto={mostrarFormulario}
+          onCerrar={() => {
+            setMostrarFormulario(false)
+            setForm(vacio)
+          }}
+          titulo="Nuevo usuario"
+          subtitulo="Se crea directamente activo, sin registro público"
+          icono={IconoEscudo}
+        >
+          <form onSubmit={handleCrear} className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2">
               <InputField
                 id="email"
                 label="Correo"
@@ -148,7 +157,7 @@ export default function Usuarios() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <BotonPrimario type="submit" disabled={guardando}>
                 {guardando ? 'Creando...' : 'Crear usuario'}
               </BotonPrimario>
@@ -164,7 +173,7 @@ export default function Usuarios() {
               </button>
             </div>
           </form>
-        </Panel>
+        </Modal>
       )}
 
       {usuarios.length === 0 ? (

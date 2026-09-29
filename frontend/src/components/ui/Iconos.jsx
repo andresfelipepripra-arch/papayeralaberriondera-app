@@ -284,3 +284,11 @@ export function IconoNota(props) {
     </Icono>
   )
 }
+
+export function IconoX(props) {
+  return (
+    <Icono {...props}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </Icono>
+  )
+}

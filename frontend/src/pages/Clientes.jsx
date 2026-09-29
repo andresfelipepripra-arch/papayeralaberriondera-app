@@ -3,13 +3,13 @@ import toast from 'react-hot-toast'
 import { clientesService } from '../services/clientesService'
 import { getEventos } from '../services/eventosService'
 import { paquetesService } from '../services/paquetesService'
-import { formatearFechaHora, formatearPrecio } from '../utils/formatters'
+import { formatearFechaHora, formatearPrecio, precioEfectivo } from '../utils/formatters'
 import { colorAvatar, inicialesDe } from '../utils/avatar'
-import Panel from '../components/ui/Panel'
+import Modal from '../components/ui/Modal'
 import EstadoBadge from '../components/ui/EstadoBadge'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
-import { IconoBasura, IconoBusqueda, IconoChevron, IconoLapiz, IconoMas } from '../components/ui/Iconos'
+import { IconoBasura, IconoBusqueda, IconoLapiz, IconoMas, IconoOjo, IconoUsuarios } from '../components/ui/Iconos'
 
 const vacio = { nombre: '', telefono: '', ciudad: '' }
 
@@ -23,7 +23,7 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [busqueda, setBusqueda] = useState('')
-  const [expandidoId, setExpandidoId] = useState(null)
+  const [verEventosId, setVerEventosId] = useState(null)
 
   const cargar = async () => {
     setLoading(true)
@@ -143,36 +143,72 @@ export default function Clientes() {
             {clientes.length} {clientes.length === 1 ? 'cliente registrado' : 'clientes registrados'}
           </p>
         </div>
-        <BotonPrimario onClick={abrirCreacion} className="px-5">
+        <BotonPrimario onClick={abrirCreacion}>
           <IconoMas className="size-4" />
           Nuevo cliente
         </BotonPrimario>
       </div>
 
-      {mostrarFormulario && (
-        <Panel titulo={editandoId ? 'Editar cliente' : 'Nuevo cliente'}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InputField id="nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required />
-              <InputField id="ciudad" label="Ciudad" name="ciudad" value={form.ciudad} onChange={handleChange} />
-              <InputField id="telefono" label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} />
-            </div>
+      <Modal
+        abierto={mostrarFormulario}
+        onCerrar={cerrarFormulario}
+        titulo={editandoId ? 'Editar cliente' : 'Nuevo cliente'}
+        icono={IconoUsuarios}
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <InputField id="nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required />
+            <InputField id="ciudad" label="Ciudad" name="ciudad" value={form.ciudad} onChange={handleChange} />
+            <InputField id="telefono" label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} />
+          </div>
 
-            <div className="flex gap-3">
-              <BotonPrimario type="submit" disabled={guardando}>
-                {guardando ? 'Guardando...' : editandoId ? 'Actualizar' : 'Crear'}
-              </BotonPrimario>
-              <button
-                type="button"
-                onClick={cerrarFormulario}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </Panel>
-      )}
+          <div className="flex gap-3 pt-2">
+            <BotonPrimario type="submit" disabled={guardando}>
+              {guardando ? 'Guardando...' : editandoId ? 'Actualizar' : 'Crear'}
+            </BotonPrimario>
+            <button
+              type="button"
+              onClick={cerrarFormulario}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        abierto={Boolean(verEventosId)}
+        onCerrar={() => setVerEventosId(null)}
+        titulo={`Eventos de ${clientes.find((c) => c.id === verEventosId)?.nombre ?? ''}`}
+        subtitulo={`${(eventosPorCliente[verEventosId] ?? []).length} eventos registrados`}
+        icono={IconoUsuarios}
+      >
+        {(eventosPorCliente[verEventosId] ?? []).length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-400">Este cliente no tiene eventos registrados</p>
+        ) : (
+          <ul className="divide-y divide-white/5">
+            {[...(eventosPorCliente[verEventosId] ?? [])]
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+              .map((evento) => (
+                <li key={evento.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">{formatearFechaHora(evento.fecha)}</p>
+                    <p className="truncate text-xs text-slate-400">
+                      {evento.ubicacion ?? 'Sin ubicación'} · {paquetesPorId[evento.paquete_id]?.nombre ?? 'Sin paquete'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-sm font-medium text-amber-400">
+                      {formatearPrecio(precioEfectivo(evento, paquetesPorId[evento.paquete_id]))}
+                    </span>
+                    <EstadoBadge estado={evento.estado ?? 'pendiente'} />
+                  </div>
+                </li>
+              ))}
+          </ul>
+        )}
+      </Modal>
 
       <div className="relative">
         <IconoBusqueda className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
@@ -194,90 +230,62 @@ export default function Clientes() {
           {clientesFiltrados.map((cliente) => {
             const eventosCliente = eventosPorCliente[cliente.id] ?? []
             const totalFacturado = eventosCliente.reduce(
-              (suma, e) => suma + (Number(paquetesPorId[e.paquete_id]?.precio) || 0),
+              (suma, e) => suma + precioEfectivo(e, paquetesPorId[e.paquete_id]),
               0,
             )
-            const expandido = expandidoId === cliente.id
-
             return (
-              <div key={cliente.id}>
-                <button
-                  type="button"
-                  onClick={() => setExpandidoId(expandido ? null : cliente.id)}
-                  className="flex w-full flex-wrap items-center gap-4 px-5 py-4 text-left transition hover:bg-white/5"
-                >
-                  <span className={`flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${colorAvatar(cliente.nombre)}`}>
-                    {inicialesDe(cliente.nombre)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{cliente.nombre}</p>
-                    <p className="truncate text-xs text-slate-400">
-                      {cliente.telefono ?? '—'}
-                      {cliente.correo && <span> · {cliente.correo}</span>}
-                    </p>
-                  </div>
+              <div key={cliente.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                <span className={`flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${colorAvatar(cliente.nombre)}`}>
+                  {inicialesDe(cliente.nombre)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-white">{cliente.nombre}</p>
+                  <p className="truncate text-xs text-slate-400">
+                    {cliente.telefono ?? '—'}
+                    {cliente.correo && <span> · {cliente.correo}</span>}
+                  </p>
+                </div>
 
-                  <div className="hidden text-right sm:block">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Ciudad</p>
-                    <p className="text-sm text-slate-200">{cliente.ciudad ?? '—'}</p>
-                  </div>
-                  <div className="hidden text-right sm:block">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Eventos</p>
-                    <p className="text-sm text-slate-200">{eventosCliente.length}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500">Total facturado</p>
-                    <p className="text-sm font-semibold text-amber-400">{formatearPrecio(totalFacturado)}</p>
-                  </div>
-                  <IconoChevron className={`size-4 shrink-0 text-slate-400 transition ${expandido ? 'rotate-90' : ''}`} />
-                </button>
+                <div className="hidden text-right sm:block">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Ciudad</p>
+                  <p className="text-sm text-slate-200">{cliente.ciudad ?? '—'}</p>
+                </div>
+                <div className="hidden text-right sm:block">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Eventos</p>
+                  <p className="text-sm text-slate-200">{eventosCliente.length}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Total facturado</p>
+                  <p className="text-sm font-semibold text-amber-400">{formatearPrecio(totalFacturado)}</p>
+                </div>
 
-                {expandido && (
-                  <div className="border-t border-white/5 bg-slate-950/40 px-5 py-4">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:hidden">
-                      <p className="text-xs text-slate-400">
-                        Ciudad: <span className="text-slate-200">{cliente.ciudad ?? '—'}</span>
-                      </p>
-                    </div>
-
-                    {eventosCliente.length === 0 ? (
-                      <p className="text-sm text-slate-400">Sin eventos registrados</p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {eventosCliente.map((evento) => (
-                          <li key={evento.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                            <span className="text-slate-300">
-                              {formatearFechaHora(evento.fecha)} · {evento.ubicacion ?? 'Sin ubicación'}
-                            </span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-slate-400">{paquetesPorId[evento.paquete_id]?.nombre ?? 'Sin paquete'}</span>
-                              <EstadoBadge estado={evento.estado ?? 'pendiente'} />
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEditar(cliente)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
-                      >
-                        <IconoLapiz className="size-3.5" />
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEliminar(cliente.id)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
-                      >
-                        <IconoBasura className="size-3.5" />
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setVerEventosId(cliente.id)}
+                    aria-label="Ver eventos anteriores"
+                    title="Ver eventos anteriores"
+                    className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <IconoOjo className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEditar(cliente)}
+                    aria-label="Editar cliente"
+                    className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <IconoLapiz className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEliminar(cliente.id)}
+                    aria-label="Eliminar cliente"
+                    className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <IconoBasura className="size-4" />
+                  </button>
+                </div>
               </div>
             )
           })}

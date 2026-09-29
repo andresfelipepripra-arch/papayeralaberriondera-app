@@ -54,6 +54,14 @@ export function formatearPrecioCorto(numero) {
   return formatearPrecio(valor)
 }
 
+// El evento puede tener su propio precio (ajustado por distancia/ubicación);
+// si no lo tiene, se usa el precio base del paquete contratado.
+export function precioEfectivo(evento, paquete) {
+  const valor = evento?.precio ?? paquete?.precio
+  const numero = Number(valor)
+  return valor != null && Number.isFinite(numero) ? numero : 0
+}
+
 // "incluye" se guarda como texto libre, un ítem por línea.
 export function itemsDeIncluye(incluye) {
   return (incluye ?? '')

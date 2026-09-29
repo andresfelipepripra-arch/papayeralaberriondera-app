@@ -2,10 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { eliminarEvento, getEventoPorId } from '../../services/eventosService'
-import { formatearDuracion, formatearFechaHora, formatearPrecio, itemsDeIncluye } from '../../utils/formatters'
+import {
+  formatearDuracion,
+  formatearFechaHora,
+  formatearPrecio,
+  itemsDeIncluye,
+  precioEfectivo,
+} from '../../utils/formatters'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import Panel from '../../components/ui/Panel'
 import EstadoBadge from '../../components/ui/EstadoBadge'
+import EventoModal from './EventoModal'
 import {
   IconoBasura,
   IconoCalendario,
@@ -27,22 +34,28 @@ export default function EventoDetalle() {
   const [evento, setEvento] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [modalAbierto, setModalAbierto] = useState(false)
+
+  const cargar = async () => {
+    try {
+      const data = await getEventoPorId(id)
+      setEvento(data)
+    } catch (err) {
+      console.error(err)
+      setError('Error al cargar el evento')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        const data = await getEventoPorId(id)
-        setEvento(data)
-      } catch (err) {
-        console.error(err)
-        setError('Error al cargar el evento')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     cargar()
   }, [id])
+
+  const alGuardar = () => {
+    setModalAbierto(false)
+    cargar()
+  }
 
   const handleEliminar = async () => {
     if (!window.confirm('¿Eliminar este evento?')) return
@@ -100,7 +113,7 @@ export default function EventoDetalle() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => navigate(`/eventos/${evento.id}/editar`)}
+            onClick={() => setModalAbierto(true)}
             className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
           >
             <IconoLapiz className="size-4" />
@@ -134,7 +147,12 @@ export default function EventoDetalle() {
                       )}
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-amber-400">{formatearPrecio(paquete.precio)}</span>
+                  <div className="text-right">
+                    <span className="text-2xl font-bold text-amber-400">{formatearPrecio(precioEfectivo(evento, paquete))}</span>
+                    {evento.precio != null && Number(evento.precio) !== Number(paquete.precio) && (
+                      <p className="text-xs text-slate-500">Ajustado · base {formatearPrecio(paquete.precio)}</p>
+                    )}
+                  </div>
                 </div>
 
                 {paquete.descripcion && (
@@ -229,6 +247,13 @@ export default function EventoDetalle() {
           )}
         </Panel>
       </div>
+
+      <EventoModal
+        abierto={modalAbierto}
+        eventoId={evento.id}
+        onCerrar={() => setModalAbierto(false)}
+        onGuardado={alGuardar}
+      />
     </div>
   )
 }

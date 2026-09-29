@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { paquetesService } from '../services/paquetesService'
 import { getEventos } from '../services/eventosService'
 import { formatearDuracion, formatearPrecio, itemsDeIncluye } from '../utils/formatters'
-import Panel from '../components/ui/Panel'
+import Modal from '../components/ui/Modal'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
-import { IconoBasura, IconoCheck, IconoEstrella, IconoLapiz, IconoMas } from '../components/ui/Iconos'
+import { IconoBasura, IconoCheck, IconoCubo, IconoEstrella, IconoLapiz, IconoMas } from '../components/ui/Iconos'
 
 const vacio = { nombre: '', descripcion: '', precio: '', duracionHoras: '', duracionMinutos: '', incluye: '' }
 
@@ -34,7 +34,6 @@ export default function Paquetes() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
-  const formRef = useRef(null)
 
   const cargar = async () => {
     setLoading(true)
@@ -69,7 +68,6 @@ export default function Paquetes() {
     setEditandoId(null)
     setForm(vacio)
     setMostrarFormulario(true)
-    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
   const cerrarFormulario = () => {
@@ -118,7 +116,6 @@ export default function Paquetes() {
       incluye: paquete.incluye ?? '',
     })
     setMostrarFormulario(true)
-    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
   const handleEliminar = async (id) => {
@@ -144,102 +141,103 @@ export default function Paquetes() {
             {paquetes.length} {paquetes.length === 1 ? 'paquete disponible' : 'paquetes disponibles'}
           </p>
         </div>
-        <BotonPrimario onClick={abrirCreacion} className="px-5">
+        <BotonPrimario onClick={abrirCreacion}>
           <IconoMas className="size-4" />
           Nuevo paquete
         </BotonPrimario>
       </div>
 
-      {mostrarFormulario && (
-        <div ref={formRef}>
-          <Panel titulo={editandoId ? 'Editar paquete' : 'Nuevo paquete'}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <InputField id="nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required />
+      <Modal
+        abierto={mostrarFormulario}
+        onCerrar={cerrarFormulario}
+        titulo={editandoId ? 'Editar paquete' : 'Nuevo paquete'}
+        icono={IconoCubo}
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <InputField id="nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required />
 
-              <div>
-                <div className="grid grid-cols-2 gap-3">
-                  <InputField
-                    id="duracionMinutos"
-                    label="Duración: minutos"
-                    name="duracionMinutos"
-                    type="number"
-                    step="5"
-                    min="0"
-                    placeholder="45"
-                    value={form.duracionMinutos}
-                    onChange={handleChange}
-                  />
-                  <InputField
-                    id="duracionHoras"
-                    label="+ horas (opcional)"
-                    name="duracionHoras"
-                    type="number"
-                    step="1"
-                    min="0"
-                    placeholder="0"
-                    value={form.duracionHoras}
-                    onChange={handleChange}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  {formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))
-                    ? `= ${formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))}`
-                    : 'La mayoría de paquetes solo necesitan minutos. Usa "horas" solo si contratan por horas completas.'}
-                </p>
-              </div>
-
+          <div>
+            <div className="grid grid-cols-2 gap-4">
               <InputField
-                id="precio"
-                label="Precio (en pesos colombianos, sin puntos ni comas)"
-                name="precio"
+                id="duracionMinutos"
+                label="Duración: minutos"
+                name="duracionMinutos"
                 type="number"
-                step="1000"
+                step="5"
                 min="0"
-                placeholder="300000"
-                value={form.precio}
+                placeholder="45"
+                value={form.duracionMinutos}
                 onChange={handleChange}
-                required
               />
-
               <InputField
-                id="descripcion"
-                label="Descripción"
-                name="descripcion"
-                value={form.descripcion}
+                id="duracionHoras"
+                label="+ horas (opcional)"
+                name="duracionHoras"
+                type="number"
+                step="1"
+                min="0"
+                placeholder="0"
+                value={form.duracionHoras}
                 onChange={handleChange}
               />
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              {formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))
+                ? `= ${formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))}`
+                : 'La mayoría de paquetes solo necesitan minutos. Usa "horas" solo si contratan por horas completas.'}
+            </p>
+          </div>
 
-              <div>
-                <label htmlFor="incluye" className="mb-2 block text-sm font-semibold text-slate-100">
-                  Qué incluye
-                </label>
-                <textarea
-                  id="incluye"
-                  name="incluye"
-                  rows={4}
-                  placeholder={'Un ítem por línea, por ejemplo:\n8 músicos\nSonido profesional\nMC/Animador'}
-                  value={form.incluye}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-white/5 bg-slate-800/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                />
-              </div>
+          <InputField
+            id="precio"
+            label="Precio (en pesos colombianos, sin puntos ni comas)"
+            name="precio"
+            type="number"
+            step="1000"
+            min="0"
+            placeholder="300000"
+            value={form.precio}
+            onChange={handleChange}
+            required
+          />
 
-              <div className="flex gap-3">
-                <BotonPrimario type="submit" disabled={guardando}>
-                  {guardando ? 'Guardando...' : editandoId ? 'Actualizar' : 'Crear'}
-                </BotonPrimario>
-                <button
-                  type="button"
-                  onClick={cerrarFormulario}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </Panel>
-        </div>
-      )}
+          <InputField
+            id="descripcion"
+            label="Descripción"
+            name="descripcion"
+            value={form.descripcion}
+            onChange={handleChange}
+          />
+
+          <div>
+            <label htmlFor="incluye" className="mb-2 block text-sm font-semibold text-slate-100">
+              Qué incluye
+            </label>
+            <textarea
+              id="incluye"
+              name="incluye"
+              rows={4}
+              placeholder={'Un ítem por línea, por ejemplo:\n8 músicos\nSonido profesional\nMC/Animador'}
+              value={form.incluye}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-white/5 bg-slate-800/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <BotonPrimario type="submit" disabled={guardando}>
+              {guardando ? 'Guardando...' : editandoId ? 'Actualizar' : 'Crear'}
+            </BotonPrimario>
+            <button
+              type="button"
+              onClick={cerrarFormulario}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {paquetes.length === 0 ? (
         <p className="py-8 text-center text-sm text-slate-400">No hay paquetes creados</p>

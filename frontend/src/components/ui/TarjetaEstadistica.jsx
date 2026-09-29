@@ -1,7 +1,7 @@
 export default function TarjetaEstadistica({ titulo, valor, detalle, icono: Icono, destacada = false }) {
   return (
     <div
-      className={`rounded-xl border p-5 ${
+      className={`rounded-xl border p-6 ${
         destacada
           ? 'border-transparent bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
           : 'border-white/5 bg-slate-900/60'

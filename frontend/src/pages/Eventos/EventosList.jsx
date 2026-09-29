@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { eliminarEvento, getEventos } from '../../services/eventosService'
+import { actualizarEvento, eliminarEvento, getEventos } from '../../services/eventosService'
 import { paquetesService } from '../../services/paquetesService'
-import { formatearDia, formatearDuracion, formatearHora, formatearMesCorto, formatearPrecio } from '../../utils/formatters'
+import {
+  formatearDia,
+  formatearDuracion,
+  formatearHora,
+  formatearMesCorto,
+  formatearPrecio,
+  precioEfectivo,
+} from '../../utils/formatters'
 import { ESTADOS, ORDEN_ESTADOS } from '../../utils/estados'
 import Panel from '../../components/ui/Panel'
-import EstadoBadge from '../../components/ui/EstadoBadge'
 import TarjetaEstadistica from '../../components/ui/TarjetaEstadistica'
 import BotonPrimario from '../../components/ui/BotonPrimario'
-import { IconoBasura, IconoBusqueda, IconoCalendario, IconoDinero, IconoLapiz, IconoMas, IconoOjo, IconoReloj } from '../../components/ui/Iconos'
+import { IconoBasura, IconoBusqueda, IconoCalendario, IconoChevron, IconoDinero, IconoLapiz, IconoMas, IconoOjo, IconoReloj } from '../../components/ui/Iconos'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
+import EventoModal from './EventoModal'
 
 const POR_PAGINA = 10
 
@@ -23,24 +30,56 @@ export default function EventosList() {
   const [filtroCliente, setFiltroCliente] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [editandoId, setEditandoId] = useState(null)
+  const [estadoDesplegadoId, setEstadoDesplegadoId] = useState(null)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const [eventosData, paquetesData] = await Promise.all([getEventos(), paquetesService.getTodos()])
-        setEventos(eventosData)
-        setPaquetes(paquetesData)
-      } catch (err) {
-        console.error(err)
-        setError('Error al cargar los eventos')
-      } finally {
-        setLoading(false)
-      }
+  const cargar = async () => {
+    try {
+      const [eventosData, paquetesData] = await Promise.all([getEventos(), paquetesService.getTodos()])
+      setEventos(eventosData)
+      setPaquetes(paquetesData)
+    } catch (err) {
+      console.error(err)
+      setError('Error al cargar los eventos')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     cargar()
   }, [])
+
+  const abrirCreacion = () => {
+    setEditandoId(null)
+    setModalAbierto(true)
+  }
+
+  const abrirEdicion = (id) => {
+    setEditandoId(id)
+    setModalAbierto(true)
+  }
+
+  const alGuardar = () => {
+    setModalAbierto(false)
+    setEditandoId(null)
+    cargar()
+  }
+
+  const handleCambiarEstado = async (evento, nuevoEstado) => {
+    setEstadoDesplegadoId(null)
+    if (nuevoEstado === (evento.estado ?? 'pendiente')) return
+    try {
+      await actualizarEvento(evento.id, { estado: nuevoEstado })
+      setEventos((prev) => prev.map((e) => (e.id === evento.id ? { ...e, estado: nuevoEstado } : e)))
+      toast.success('Estado actualizado')
+    } catch (err) {
+      console.error(err)
+      toast.error(err.response?.data?.error || 'Error al cambiar el estado')
+    }
+  }
 
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Eliminar este evento?')) return
@@ -77,7 +116,7 @@ export default function EventosList() {
   const porConfirmar = eventos.filter((e) => new Date(e.fecha) >= ahora && (e.estado ?? 'pendiente') === 'pendiente')
   const ingresosEstimados = eventos
     .filter((e) => new Date(e.fecha) >= ahora && ['pendiente', 'confirmado'].includes(e.estado ?? 'pendiente'))
-    .reduce((suma, e) => suma + (Number(paqueteDe(e)?.precio) || 0), 0)
+    .reduce((suma, e) => suma + precioEfectivo(e, paqueteDe(e)), 0)
 
   const textoBusqueda = busqueda.trim().toLowerCase()
   const eventosFiltrados = eventos.filter((evento) => {
@@ -106,7 +145,7 @@ export default function EventosList() {
           <h1 className="font-serif text-3xl font-bold text-white">Eventos</h1>
           <p className="mt-1 text-sm text-slate-400">Registro de toques y contrataciones</p>
         </div>
-        <BotonPrimario onClick={() => navigate('/eventos/nuevo')} className="px-5">
+        <BotonPrimario onClick={abrirCreacion}>
           <IconoMas className="size-4" />
           Nuevo evento
         </BotonPrimario>
@@ -225,10 +264,42 @@ export default function EventosList() {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 font-medium text-white">
-                          {formatearPrecio(paquete?.precio)}
+                          {formatearPrecio(precioEfectivo(evento, paquete))}
                         </td>
-                        <td className="whitespace-nowrap px-2 py-3">
-                          <EstadoBadge estado={evento.estado ?? 'pendiente'} />
+                        <td className="relative whitespace-nowrap px-2 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setEstadoDesplegadoId(estadoDesplegadoId === evento.id ? null : evento.id)}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition hover:brightness-110 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
+                          >
+                            <span className={`size-1.5 rounded-full ${ESTADOS[evento.estado ?? 'pendiente'].punto}`} />
+                            {ESTADOS[evento.estado ?? 'pendiente'].etiqueta}
+                            <IconoChevron className="size-3 rotate-90" />
+                          </button>
+
+                          {estadoDesplegadoId === evento.id && (
+                            <>
+                              <button
+                                type="button"
+                                aria-label="Cerrar"
+                                onClick={() => setEstadoDesplegadoId(null)}
+                                className="fixed inset-0 z-10 cursor-default"
+                              />
+                              <div className="absolute left-2 top-full z-20 mt-1 w-40 rounded-lg border border-white/10 bg-slate-800 p-1 shadow-xl">
+                                {ORDEN_ESTADOS.map((estado) => (
+                                  <button
+                                    key={estado}
+                                    type="button"
+                                    onClick={() => handleCambiarEstado(evento, estado)}
+                                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-slate-200 transition hover:bg-white/5"
+                                  >
+                                    <span className={`size-1.5 rounded-full ${ESTADOS[estado].punto}`} />
+                                    {ESTADOS[estado].etiqueta}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3">
                           <div className="flex items-center gap-1">
@@ -242,7 +313,7 @@ export default function EventosList() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => navigate(`/eventos/${evento.id}/editar`)}
+                              onClick={() => abrirEdicion(evento.id)}
                               aria-label="Editar evento"
                               className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
                             >
@@ -292,6 +363,16 @@ export default function EventosList() {
           </>
         )}
       </Panel>
+
+      <EventoModal
+        abierto={modalAbierto}
+        eventoId={editandoId}
+        onCerrar={() => {
+          setModalAbierto(false)
+          setEditandoId(null)
+        }}
+        onGuardado={alGuardar}
+      />
     </div>
   )
 }

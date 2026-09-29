@@ -5,7 +5,6 @@ import AppLayout from '../components/layout/AppLayout'
 import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
 import EventosList from '../pages/Eventos/EventosList'
-import EventoForm from '../pages/Eventos/EventoForm'
 import EventoDetalle from '../pages/Eventos/EventoDetalle'
 import Calendario from '../pages/Calendario'
 import Paquetes from '../pages/Paquetes'
@@ -21,9 +20,7 @@ export default function AppRoutes() {
       <Route element={<RutaProtegida><AppLayout /></RutaProtegida>}>
         <Route index element={<Dashboard />} />
         <Route path="eventos" element={<EventosList />} />
-        <Route path="eventos/nuevo" element={<EventoForm />} />
         <Route path="eventos/:id" element={<EventoDetalle />} />
-        <Route path="eventos/:id/editar" element={<EventoForm />} />
         <Route path="calendario" element={<Calendario />} />
         <Route path="paquetes" element={<Paquetes />} />
         <Route path="clientes" element={<Clientes />} />
