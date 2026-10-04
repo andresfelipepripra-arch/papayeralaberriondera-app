@@ -33,6 +33,7 @@ import TarjetaEstadistica from '../components/ui/TarjetaEstadistica'
 import EstadoBadge from '../components/ui/EstadoBadge'
 import Donut from '../components/ui/Donut'
 import EventoModal from './Eventos/EventoModal'
+import EventoDetalleModal from './Eventos/EventoDetalleModal'
 import {
   IconoCalendario,
   IconoCheckCirculo,
@@ -85,6 +86,8 @@ export default function Dashboard() {
   const [modoPeriodo, setModoPeriodo] = useState('mes')
   const [valorPeriodo, setValorPeriodo] = useState(() => format(new Date(), 'yyyy-MM'))
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [editandoId, setEditandoId] = useState(null)
+  const [verDetalleId, setVerDetalleId] = useState(null)
   const { user } = useAuth()
 
   const cargar = async () => {
@@ -329,9 +332,10 @@ export default function Dashboard() {
             <ul className="divide-y divide-white/5">
               {eventosPeriodoVisibles.map((evento) => (
                 <li key={evento.id}>
-                  <Link
-                    to={`/eventos/${evento.id}`}
-                    className="flex items-center gap-4 rounded-lg px-2 py-3 transition hover:bg-white/5"
+                  <button
+                    type="button"
+                    onClick={() => setVerDetalleId(evento.id)}
+                    className="flex w-full items-center gap-4 rounded-lg px-2 py-3 text-left transition hover:bg-white/5"
                   >
                     <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-slate-950/60">
                       <span className="text-lg font-bold leading-none text-amber-400">
@@ -356,7 +360,7 @@ export default function Dashboard() {
                         {precioDe(evento) > 0 && ` · ${formatearPrecio(precioDe(evento))}`}
                       </span>
                     </div>
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -430,9 +434,10 @@ export default function Dashboard() {
               <ul className="divide-y divide-white/5">
                 {porConfirmar.slice(0, 4).map((evento) => (
                   <li key={evento.id}>
-                    <Link
-                      to={`/eventos/${evento.id}`}
-                      className="flex items-start justify-between gap-3 rounded-lg px-1 py-2.5 transition hover:bg-white/5"
+                    <button
+                      type="button"
+                      onClick={() => setVerDetalleId(evento.id)}
+                      className="flex w-full items-start justify-between gap-3 rounded-lg px-1 py-2.5 text-left transition hover:bg-white/5"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">
@@ -441,7 +446,7 @@ export default function Dashboard() {
                         <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
                       </div>
                       <span className="shrink-0 text-xs text-slate-400">{formatearFechaCorta(evento.fecha)}</span>
-                    </Link>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -452,10 +457,28 @@ export default function Dashboard() {
 
       <EventoModal
         abierto={modalAbierto}
-        eventoId={null}
-        onCerrar={() => setModalAbierto(false)}
+        eventoId={editandoId}
+        onCerrar={() => {
+          setModalAbierto(false)
+          setEditandoId(null)
+        }}
         onGuardado={() => {
           setModalAbierto(false)
+          setEditandoId(null)
+          cargar()
+        }}
+      />
+
+      <EventoDetalleModal
+        eventoId={verDetalleId}
+        onCerrar={() => setVerDetalleId(null)}
+        onEditar={(id) => {
+          setVerDetalleId(null)
+          setEditandoId(id)
+          setModalAbierto(true)
+        }}
+        onEliminado={() => {
+          setVerDetalleId(null)
           cargar()
         }}
       />

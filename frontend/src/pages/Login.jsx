@@ -2,21 +2,24 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
+import { establecerRecordarSesion, recordarSesionActivado } from '../services/supabaseClient'
 import InputField from '../components/ui/InputField'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import {
   IconoCandado,
   IconoCorreo,
-  IconoEscudo,
   IconoFlecha,
   IconoNotaMusical,
   IconoOjo,
   IconoOjoTachado,
 } from '../components/ui/Iconos'
 
+const CLAVE_CORREO_RECORDADO = 'papayera_correo_recordado'
+
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => (recordarSesionActivado() ? localStorage.getItem(CLAVE_CORREO_RECORDADO) ?? '' : ''))
   const [password, setPassword] = useState('')
+  const [recordar, setRecordar] = useState(recordarSesionActivado)
   const [loading, setLoading] = useState(false)
   const [mostrarPassword, setMostrarPassword] = useState(false)
   const { signIn } = useAuth()
@@ -25,9 +28,12 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    establecerRecordarSesion(recordar)
 
     try {
       await signIn(email, password)
+      if (recordar) localStorage.setItem(CLAVE_CORREO_RECORDADO, email)
+      else localStorage.removeItem(CLAVE_CORREO_RECORDADO)
       navigate('/', { replace: true })
     } catch (err) {
       toast.error(err.message || 'No se pudo iniciar sesión')
@@ -60,15 +66,8 @@ export default function Login() {
           <IconoNotaMusical className="size-8 text-amber-500" />
         </div>
 
-        <span className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full bg-slate-800/80 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-amber-400">
-          <span className="size-1.5 rounded-full bg-amber-500" />
-          Consola Central
-        </span>
-
-        <h1 className="text-center text-3xl font-bold tracking-tight text-white">Papayera Pro Admin</h1>
-        <p className="mt-2 text-center text-sm text-slate-300">
-          Plataforma de Gestión y Coordinación Musical
-        </p>
+        <h1 className="text-center text-3xl font-bold tracking-tight text-white">Sistema de Gestión</h1>
+        <p className="mt-2 text-center text-sm font-semibold text-amber-400">Papayera La Berriondera</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <InputField
@@ -76,7 +75,7 @@ export default function Login() {
             label="Correo Electrónico"
             icono={IconoCorreo}
             type="email"
-            placeholder="director@papayerapro.com"
+            placeholder="tu@correo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -103,15 +102,15 @@ export default function Login() {
             }
           />
 
-          <div className="flex items-center justify-between text-xs font-medium">
-            <label className="flex cursor-pointer items-center gap-2 text-slate-200">
-              <input type="checkbox" className="size-4 rounded accent-amber-500" />
-              Recordarme
-            </label>
-            <button type="button" className="text-amber-500 transition hover:text-amber-400">
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-200">
+            <input
+              type="checkbox"
+              checked={recordar}
+              onChange={(e) => setRecordar(e.target.checked)}
+              className="size-4 rounded accent-amber-500"
+            />
+            Recordarme en este equipo
+          </label>
 
           <BotonPrimario type="submit" disabled={loading} className="w-full">
             {loading ? (
@@ -125,11 +124,6 @@ export default function Login() {
           </BotonPrimario>
         </form>
       </div>
-
-      <p className="relative mt-8 flex items-center gap-2 text-xs font-medium text-slate-400">
-        <IconoEscudo className="size-4 text-amber-500" />
-        Acceso exclusivo para directores y administradores
-      </p>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { clientesService } from '../services/clientesService'
 import { getEventos } from '../services/eventosService'
 import { paquetesService } from '../services/paquetesService'
@@ -24,6 +25,7 @@ export default function Clientes() {
   const [guardando, setGuardando] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [verEventosId, setVerEventosId] = useState(null)
+  const navigate = useNavigate()
 
   const cargar = async () => {
     setLoading(true)
@@ -203,6 +205,18 @@ export default function Clientes() {
                       {formatearPrecio(precioEfectivo(evento, paquetesPorId[evento.paquete_id]))}
                     </span>
                     <EstadoBadge estado={evento.estado ?? 'pendiente'} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerEventosId(null)
+                        navigate(`/eventos?evento=${evento.id}`)
+                      }}
+                      aria-label="Ver detalle del evento"
+                      title="Ver detalle del evento"
+                      className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    >
+                      <IconoOjo className="size-4" />
+                    </button>
                   </div>
                 </li>
               ))}

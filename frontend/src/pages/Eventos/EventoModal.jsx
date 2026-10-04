@@ -12,9 +12,16 @@ import { IconoCalendario } from '../../components/ui/Iconos'
 const vacio = {
   cliente_id: '',
   paquete_id: '',
-  precio: '',
+  nombre_contacto: '',
+  telefono_contacto: '',
+  nombre_telefono_alterno: '',
+  telefono_alterno: '',
+  tipo_evento: '',
   fecha: '',
+  ciudad: '',
   ubicacion: '',
+  precio: '',
+  abonado: '',
   estado: 'confirmado',
   notas: '',
 }
@@ -47,12 +54,20 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
 
         if (evento) {
           const paqueteActual = paquetesData.find((p) => p.id === evento.paquete_id)
+          const clienteActual = clientesData.find((c) => c.id === evento.cliente_id)
           setForm({
             cliente_id: evento.cliente_id ?? '',
             paquete_id: evento.paquete_id ?? '',
-            precio: evento.precio ?? paqueteActual?.precio ?? '',
+            nombre_contacto: evento.nombre_contacto ?? '',
+            telefono_contacto: evento.telefono_contacto ?? clienteActual?.telefono ?? '',
+            nombre_telefono_alterno: evento.nombre_telefono_alterno ?? '',
+            telefono_alterno: evento.telefono_alterno ?? '',
+            tipo_evento: evento.tipo_evento ?? '',
             fecha: evento.fecha ? aInputDatetimeLocal(evento.fecha) : '',
+            ciudad: evento.ciudad ?? '',
             ubicacion: evento.ubicacion ?? '',
+            precio: evento.precio ?? paqueteActual?.precio ?? '',
+            abonado: evento.abonado ?? 0,
             estado: evento.estado ?? 'confirmado',
             notas: evento.notas ?? '',
           })
@@ -77,11 +92,21 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  const handleClienteChange = (e) => {
+    const clienteId = e.target.value
+    const cliente = clientes.find((c) => c.id === clienteId)
+    setForm({ ...form, cliente_id: clienteId, telefono_contacto: cliente?.telefono ?? '' })
+  }
+
   const handlePaqueteChange = (e) => {
     const paqueteId = e.target.value
     const paquete = paquetes.find((p) => p.id === paqueteId)
     setForm({ ...form, paquete_id: paqueteId, precio: paquete?.precio ?? '' })
   }
+
+  const total = Number(form.precio) || 0
+  const abonado = Number(form.abonado) || 0
+  const falta = total - abonado
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -94,6 +119,16 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
 
     if (!form.paquete_id) {
       toast.error('Selecciona un paquete')
+      return
+    }
+
+    if (abonado < 0) {
+      toast.error('El abonado no puede ser negativo')
+      return
+    }
+
+    if (abonado > total) {
+      toast.error('El abonado no puede ser mayor al total a cobrar')
       return
     }
 
@@ -114,9 +149,16 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
     const payload = {
       cliente_id: form.cliente_id,
       paquete_id: form.paquete_id,
-      precio: form.precio !== '' ? Number(form.precio) : null,
+      nombre_contacto: form.nombre_contacto.trim() || null,
+      telefono_contacto: form.telefono_contacto || null,
+      nombre_telefono_alterno: form.nombre_telefono_alterno.trim() || null,
+      telefono_alterno: form.telefono_alterno || null,
+      tipo_evento: form.tipo_evento.trim() || null,
       fecha: new Date(form.fecha).toISOString(),
+      ciudad: form.ciudad || null,
       ubicacion: form.ubicacion || null,
+      precio: form.precio !== '' ? Number(form.precio) : null,
+      abonado,
       estado: form.estado,
       notas: form.notas || null,
     }
@@ -158,7 +200,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
               <label htmlFor="cliente_id" className={estiloLabel}>
                 Cliente
               </label>
-              <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleChange} className={estiloCampo}>
+              <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleClienteChange} className={estiloCampo}>
                 <option value="">Selecciona un cliente</option>
                 {clientes.map((cliente) => (
                   <option key={cliente.id} value={cliente.id}>
@@ -184,24 +226,86 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             </div>
           </div>
 
-          <div className="sm:w-1/2 sm:pr-2.5">
-            <label htmlFor="precio" className={estiloLabel}>
-              Precio
-            </label>
-            <input
-              id="precio"
-              name="precio"
-              type="number"
-              step="1000"
-              min="0"
-              placeholder="300000"
-              value={form.precio}
-              onChange={handleChange}
-              className={estiloCampo}
-            />
-            <p className="mt-1 text-xs text-slate-400">
-              Se llena con el precio del paquete al seleccionarlo, pero puedes ajustarlo (ej. por distancia).
-            </p>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="nombre_contacto" className={estiloLabel}>
+                Nombre del contacto <span className="font-normal text-slate-500">(opcional)</span>
+              </label>
+              <input
+                id="nombre_contacto"
+                name="nombre_contacto"
+                type="text"
+                value={form.nombre_contacto}
+                onChange={handleChange}
+                placeholder="Ej. María Pérez, encargada de eventos"
+                className={estiloCampo}
+              />
+              <p className="mt-1 text-xs text-slate-400">Útil cuando el cliente es una empresa.</p>
+            </div>
+
+            <div>
+              <label htmlFor="telefono_contacto" className={estiloLabel}>
+                Teléfono del cliente
+              </label>
+              <input
+                id="telefono_contacto"
+                name="telefono_contacto"
+                type="tel"
+                value={form.telefono_contacto}
+                onChange={handleChange}
+                placeholder="Sin teléfono registrado"
+                className={estiloCampo}
+              />
+              <p className="mt-1 text-xs text-slate-400">Viene del cliente, pero puedes cambiarlo solo para este evento.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="nombre_telefono_alterno" className={estiloLabel}>
+                Nombre del otro teléfono <span className="font-normal text-slate-500">(opcional)</span>
+              </label>
+              <input
+                id="nombre_telefono_alterno"
+                name="nombre_telefono_alterno"
+                type="text"
+                value={form.nombre_telefono_alterno}
+                onChange={handleChange}
+                placeholder="Ej. Mamá, asistente"
+                className={estiloCampo}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="telefono_alterno" className={estiloLabel}>
+                Otro teléfono <span className="font-normal text-slate-500">(opcional)</span>
+              </label>
+              <input
+                id="telefono_alterno"
+                name="telefono_alterno"
+                type="tel"
+                value={form.telefono_alterno}
+                onChange={handleChange}
+                className={estiloCampo}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="tipo_evento" className={estiloLabel}>
+                Tipo de evento
+              </label>
+              <input
+                id="tipo_evento"
+                name="tipo_evento"
+                type="text"
+                value={form.tipo_evento}
+                onChange={handleChange}
+                placeholder="Ej. Cumpleaños"
+                className={estiloCampo}
+              />
+            </div>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -219,20 +323,75 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
                 className={estiloCampo}
               />
             </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="ciudad" className={estiloLabel}>
+                Ciudad
+              </label>
+              <input id="ciudad" name="ciudad" type="text" value={form.ciudad} onChange={handleChange} className={estiloCampo} />
+            </div>
 
             <div>
               <label htmlFor="ubicacion" className={estiloLabel}>
                 Ubicación
               </label>
+              <input id="ubicacion" name="ubicacion" type="text" value={form.ubicacion} onChange={handleChange} className={estiloCampo} />
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="precio" className={estiloLabel}>
+                Total a cobrar
+              </label>
               <input
-                id="ubicacion"
-                name="ubicacion"
-                type="text"
-                value={form.ubicacion}
+                id="precio"
+                name="precio"
+                type="number"
+                step="1000"
+                min="0"
+                placeholder="300000"
+                value={form.precio}
+                onChange={handleChange}
+                className={estiloCampo}
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Se llena con el precio del paquete, pero puedes ajustarlo (ej. por distancia).
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="abonado" className={estiloLabel}>
+                Abonado
+              </label>
+              <input
+                id="abonado"
+                name="abonado"
+                type="number"
+                step="1000"
+                min="0"
+                placeholder="0"
+                value={form.abonado}
                 onChange={handleChange}
                 className={estiloCampo}
               />
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/5 bg-slate-950/60 px-4 py-3.5 text-sm">
+            <span className="text-slate-300">
+              Abonado <span className="font-semibold text-white">{formatearPrecio(abonado)}</span> de{' '}
+              <span className="font-semibold text-white">{formatearPrecio(total)}</span>
+            </span>
+            {falta < 0 ? (
+              <span className="font-bold text-red-400">El abonado supera el total</span>
+            ) : falta === 0 ? (
+              <span className="font-bold text-emerald-400">Pagado completo</span>
+            ) : (
+              <span className="font-bold text-amber-400">Falta {formatearPrecio(falta)}</span>
+            )}
           </div>
 
           <div>

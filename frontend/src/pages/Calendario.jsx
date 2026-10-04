@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   addMonths,
   eachDayOfInterval,
@@ -19,6 +18,8 @@ import { formatearHora } from '../utils/formatters'
 import { ESTADOS, ORDEN_ESTADOS } from '../utils/estados'
 import Panel from '../components/ui/Panel'
 import { IconoChevron } from '../components/ui/Iconos'
+import EventoModal from './Eventos/EventoModal'
+import EventoDetalleModal from './Eventos/EventoDetalleModal'
 
 const DIAS_SEMANA = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
 const opcionesSemana = { weekStartsOn: 1 }
@@ -30,23 +31,36 @@ export default function Calendario() {
   const [error, setError] = useState(null)
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [mesActual, setMesActual] = useState(() => startOfMonth(new Date()))
-  const navigate = useNavigate()
+  const [verDetalleId, setVerDetalleId] = useState(null)
+  const [editandoId, setEditandoId] = useState(null)
+  const [modalAbierto, setModalAbierto] = useState(false)
+
+  const cargar = async () => {
+    try {
+      const data = await getEventos()
+      setEventos(data)
+    } catch (err) {
+      console.error(err)
+      setError('Error al cargar los eventos')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        const data = await getEventos()
-        setEventos(data)
-      } catch (err) {
-        console.error(err)
-        setError('Error al cargar los eventos')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     cargar()
   }, [])
+
+  const abrirEdicion = (id) => {
+    setEditandoId(id)
+    setModalAbierto(true)
+  }
+
+  const alGuardar = () => {
+    setModalAbierto(false)
+    setEditandoId(null)
+    cargar()
+  }
 
   const conteoPorEstado = useMemo(
     () =>
@@ -174,7 +188,7 @@ export default function Calendario() {
                     <button
                       key={evento.id}
                       type="button"
-                      onClick={() => navigate(`/eventos/${evento.id}`)}
+                      onClick={() => setVerDetalleId(evento.id)}
                       title={`${formatearHora(evento.fecha)} · ${evento.clientes?.nombre ?? 'Evento'}`}
                       className={`block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
                     >
@@ -190,6 +204,29 @@ export default function Calendario() {
           })}
         </div>
       </Panel>
+
+      <EventoDetalleModal
+        eventoId={verDetalleId}
+        onCerrar={() => setVerDetalleId(null)}
+        onEditar={(id) => {
+          setVerDetalleId(null)
+          abrirEdicion(id)
+        }}
+        onEliminado={() => {
+          setVerDetalleId(null)
+          cargar()
+        }}
+      />
+
+      <EventoModal
+        abierto={modalAbierto}
+        eventoId={editandoId}
+        onCerrar={() => {
+          setModalAbierto(false)
+          setEditandoId(null)
+        }}
+        onGuardado={alGuardar}
+      />
     </div>
   )
 }

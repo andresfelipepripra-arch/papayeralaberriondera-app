@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { actualizarEvento, eliminarEvento, getEventos } from '../../services/eventosService'
 import { paquetesService } from '../../services/paquetesService'
@@ -18,8 +19,11 @@ import BotonPrimario from '../../components/ui/BotonPrimario'
 import { IconoBasura, IconoBusqueda, IconoCalendario, IconoChevron, IconoDinero, IconoLapiz, IconoMas, IconoOjo, IconoReloj } from '../../components/ui/Iconos'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import EventoModal from './EventoModal'
+import EventoDetalleModal from './EventoDetalleModal'
 
-const POR_PAGINA = 10
+const POR_PAGINA = 8
+const ALTURA_MENU_ESTADOS = 150
+const ANCHO_MENU_ESTADOS = 160
 
 export default function EventosList() {
   const [eventos, setEventos] = useState([])
@@ -32,8 +36,9 @@ export default function EventosList() {
   const [pagina, setPagina] = useState(1)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
-  const [estadoDesplegadoId, setEstadoDesplegadoId] = useState(null)
-  const navigate = useNavigate()
+  const [estadoAbierto, setEstadoAbierto] = useState(null)
+  const [verDetalleId, setVerDetalleId] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const cargar = async () => {
     try {
@@ -52,6 +57,36 @@ export default function EventosList() {
     cargar()
   }, [])
 
+  useEffect(() => {
+    const eventoId = searchParams.get('evento')
+    if (!eventoId) return
+    setVerDetalleId(eventoId)
+    setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (!estadoAbierto) return
+    const cerrar = () => setEstadoAbierto(null)
+    window.addEventListener('scroll', cerrar, true)
+    window.addEventListener('resize', cerrar)
+    return () => {
+      window.removeEventListener('scroll', cerrar, true)
+      window.removeEventListener('resize', cerrar)
+    }
+  }, [estadoAbierto])
+
+  const abrirEstados = (e, evento) => {
+    if (estadoAbierto?.id === evento.id) return setEstadoAbierto(null)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const abreArriba = rect.bottom + ALTURA_MENU_ESTADOS > window.innerHeight
+    setEstadoAbierto({
+      id: evento.id,
+      left: Math.min(rect.left, window.innerWidth - ANCHO_MENU_ESTADOS - 8),
+      top: abreArriba ? undefined : rect.bottom + 4,
+      bottom: abreArriba ? window.innerHeight - rect.top + 4 : undefined,
+    })
+  }
+
   const abrirCreacion = () => {
     setEditandoId(null)
     setModalAbierto(true)
@@ -69,7 +104,7 @@ export default function EventosList() {
   }
 
   const handleCambiarEstado = async (evento, nuevoEstado) => {
-    setEstadoDesplegadoId(null)
+    setEstadoAbierto(null)
     if (nuevoEstado === (evento.estado ?? 'pendiente')) return
     try {
       await actualizarEvento(evento.id, { estado: nuevoEstado })
@@ -266,46 +301,22 @@ export default function EventosList() {
                         <td className="whitespace-nowrap px-2 py-3 font-medium text-white">
                           {formatearPrecio(precioEfectivo(evento, paquete))}
                         </td>
-                        <td className="relative whitespace-nowrap px-2 py-3">
+                        <td className="whitespace-nowrap px-2 py-3">
                           <button
                             type="button"
-                            onClick={() => setEstadoDesplegadoId(estadoDesplegadoId === evento.id ? null : evento.id)}
+                            onClick={(e) => abrirEstados(e, evento)}
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition hover:brightness-110 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
                           >
                             <span className={`size-1.5 rounded-full ${ESTADOS[evento.estado ?? 'pendiente'].punto}`} />
                             {ESTADOS[evento.estado ?? 'pendiente'].etiqueta}
                             <IconoChevron className="size-3 rotate-90" />
                           </button>
-
-                          {estadoDesplegadoId === evento.id && (
-                            <>
-                              <button
-                                type="button"
-                                aria-label="Cerrar"
-                                onClick={() => setEstadoDesplegadoId(null)}
-                                className="fixed inset-0 z-10 cursor-default"
-                              />
-                              <div className="absolute left-2 top-full z-20 mt-1 w-40 rounded-lg border border-white/10 bg-slate-800 p-1 shadow-xl">
-                                {ORDEN_ESTADOS.map((estado) => (
-                                  <button
-                                    key={estado}
-                                    type="button"
-                                    onClick={() => handleCambiarEstado(evento, estado)}
-                                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-slate-200 transition hover:bg-white/5"
-                                  >
-                                    <span className={`size-1.5 rounded-full ${ESTADOS[estado].punto}`} />
-                                    {ESTADOS[estado].etiqueta}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3">
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              onClick={() => navigate(`/eventos/${evento.id}`)}
+                              onClick={() => setVerDetalleId(evento.id)}
                               aria-label="Ver detalle"
                               className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
                             >
@@ -373,6 +384,49 @@ export default function EventosList() {
         }}
         onGuardado={alGuardar}
       />
+
+      <EventoDetalleModal
+        eventoId={verDetalleId}
+        onCerrar={() => setVerDetalleId(null)}
+        onEditar={(id) => {
+          setVerDetalleId(null)
+          abrirEdicion(id)
+        }}
+        onEliminado={() => {
+          setVerDetalleId(null)
+          cargar()
+        }}
+      />
+
+      {estadoAbierto &&
+        eventos.some((e) => e.id === estadoAbierto.id) &&
+        createPortal(
+          <>
+            <button
+              type="button"
+              aria-label="Cerrar menú de estado"
+              onClick={() => setEstadoAbierto(null)}
+              className="fixed inset-0 z-40 cursor-default"
+            />
+            <div
+              style={{ left: estadoAbierto.left, top: estadoAbierto.top, bottom: estadoAbierto.bottom, width: ANCHO_MENU_ESTADOS }}
+              className="fixed z-50 rounded-lg border border-white/10 bg-slate-800 p-1 shadow-xl"
+            >
+              {ORDEN_ESTADOS.map((estado) => (
+                <button
+                  key={estado}
+                  type="button"
+                  onClick={() => handleCambiarEstado(eventos.find((e) => e.id === estadoAbierto.id), estado)}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-medium text-slate-200 transition hover:bg-white/5"
+                >
+                  <span className={`size-1.5 rounded-full ${ESTADOS[estado].punto}`} />
+                  {ESTADOS[estado].etiqueta}
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   )
 }

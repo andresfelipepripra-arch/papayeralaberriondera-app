@@ -6,7 +6,8 @@ import { formatearDuracion, formatearPrecio, itemsDeIncluye } from '../utils/for
 import Modal from '../components/ui/Modal'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
-import { IconoBasura, IconoCheck, IconoCubo, IconoEstrella, IconoLapiz, IconoMas } from '../components/ui/Iconos'
+import PaqueteDetalleModal from './PaqueteDetalleModal'
+import { IconoBasura, IconoCheck, IconoCubo, IconoEstrella, IconoLapiz, IconoMas, IconoOjo } from '../components/ui/Iconos'
 
 const vacio = { nombre: '', descripcion: '', precio: '', duracionHoras: '', duracionMinutos: '', incluye: '' }
 
@@ -34,6 +35,7 @@ export default function Paquetes() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [verDetalleId, setVerDetalleId] = useState(null)
 
   const cargar = async () => {
     setLoading(true)
@@ -288,6 +290,14 @@ export default function Paquetes() {
                 <div className="mt-6 flex gap-2 pt-2">
                   <button
                     type="button"
+                    onClick={() => setVerDetalleId(paquete.id)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
+                  >
+                    <IconoOjo className="size-4" />
+                    Ver detalle
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleEditar(paquete)}
                     className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
                   >
@@ -308,6 +318,16 @@ export default function Paquetes() {
           })}
         </div>
       )}
+
+      <PaqueteDetalleModal
+        paquete={paquetes.find((p) => p.id === verDetalleId) ?? null}
+        eventos={eventos}
+        onCerrar={() => setVerDetalleId(null)}
+        onEditar={(paquete) => {
+          setVerDetalleId(null)
+          handleEditar(paquete)
+        }}
+      />
     </div>
   )
 }
