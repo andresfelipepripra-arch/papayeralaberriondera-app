@@ -14,9 +14,10 @@ concurrency:
 jobs:
   enviar_recordatorios:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Disparar envío de recordatorios
         run: |
-          curl -f -X POST \
+          curl -f -X POST --max-time 180 \
             -H "x-cron-key: ${{ secrets.CRON_SECRET }}" \
             https://papayeralaberriondera-app.onrender.com/jobs/recordatorios

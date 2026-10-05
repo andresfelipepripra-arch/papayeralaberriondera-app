@@ -4,6 +4,9 @@ import nodemailer from 'nodemailer'
 const transporte = nodemailer.createTransport({
   service: 'gmail',
   auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 30000,
 })
 export const REMITENTE_DEFAULT = process.env.EMAIL_FROM || `Papayera La Berriondera <${process.env.GMAIL_USER}>`
 
