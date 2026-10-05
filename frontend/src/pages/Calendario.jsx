@@ -34,6 +34,7 @@ export default function Calendario() {
   const [verDetalleId, setVerDetalleId] = useState(null)
   const [editandoId, setEditandoId] = useState(null)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() => new Date())
 
   const cargar = async () => {
     try {
@@ -173,7 +174,10 @@ export default function Calendario() {
             return (
               <div
                 key={dia.toISOString()}
-                className={`min-h-24 bg-slate-900/40 p-1.5 sm:min-h-28 ${!enMes ? 'opacity-40' : ''}`}
+                onClick={() => setDiaSeleccionado(dia)}
+                className={`min-h-12 cursor-pointer bg-slate-900/40 p-1 sm:min-h-28 sm:cursor-default sm:p-1.5 ${!enMes ? 'opacity-40' : ''} ${
+                  isSameDay(dia, diaSeleccionado) ? 'ring-1 ring-inset ring-amber-500/60' : ''
+                }`}
               >
                 <span
                   className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
@@ -183,7 +187,13 @@ export default function Calendario() {
                   {format(dia, 'd')}
                 </span>
 
-                <div className="mt-1 space-y-1">
+                <div className="mt-1 flex flex-wrap justify-center gap-0.5 sm:hidden">
+                  {eventosDelDia.slice(0, 3).map((evento) => (
+                    <span key={evento.id} className={`size-1.5 rounded-full ${ESTADOS[evento.estado ?? 'pendiente'].punto}`} />
+                  ))}
+                </div>
+
+                <div className="mt-1 hidden space-y-1 sm:block">
                   {eventosDelDia.slice(0, 3).map((evento) => (
                     <button
                       key={evento.id}
@@ -202,6 +212,27 @@ export default function Calendario() {
               </div>
             )
           })}
+        </div>
+
+        <div className="mt-4 space-y-2 sm:hidden">
+          <h3 className="text-sm font-semibold capitalize text-white">
+            {format(diaSeleccionado, "EEEE d 'de' MMMM", { locale: es })}
+          </h3>
+          {(eventosPorDia[claveDia(diaSeleccionado)] ?? []).length === 0 ? (
+            <p className="py-3 text-center text-xs text-slate-400">No hay eventos este día</p>
+          ) : (
+            (eventosPorDia[claveDia(diaSeleccionado)] ?? []).map((evento) => (
+              <button
+                key={evento.id}
+                type="button"
+                onClick={() => setVerDetalleId(evento.id)}
+                className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
+              >
+                <span className="truncate font-semibold">{evento.clientes?.nombre ?? 'Evento'}</span>
+                <span className="shrink-0 text-xs">{formatearHora(evento.fecha)}</span>
+              </button>
+            ))
+          )}
         </div>
       </Panel>
 

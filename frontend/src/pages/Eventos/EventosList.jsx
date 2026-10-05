@@ -16,8 +16,10 @@ import { ESTADOS, ORDEN_ESTADOS } from '../../utils/estados'
 import Panel from '../../components/ui/Panel'
 import TarjetaEstadistica from '../../components/ui/TarjetaEstadistica'
 import BotonPrimario from '../../components/ui/BotonPrimario'
-import { IconoBasura, IconoBusqueda, IconoCalendario, IconoChevron, IconoDinero, IconoLapiz, IconoMas, IconoOjo, IconoReloj } from '../../components/ui/Iconos'
+import { IconoBasura, IconoBusqueda, IconoCalendario, IconoChevron, IconoCopiar, IconoDinero, IconoLapiz, IconoLista, IconoMas, IconoOjo, IconoReloj } from '../../components/ui/Iconos'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
+import { construirResumenEvento } from '../../utils/resumenEvento'
+import { useConfiguracion } from '../../context/ConfiguracionContext'
 import EventoModal from './EventoModal'
 import EventoDetalleModal from './EventoDetalleModal'
 
@@ -39,6 +41,8 @@ export default function EventosList() {
   const [estadoAbierto, setEstadoAbierto] = useState(null)
   const [verDetalleId, setVerDetalleId] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
+  const { configuracion } = useConfiguracion() ?? {}
+  const ganancia = Number(configuracion?.ganancia_por_evento ?? 70000)
 
   const cargar = async () => {
     try {
@@ -116,6 +120,16 @@ export default function EventosList() {
     }
   }
 
+  const copiarResumen = async (evento, paquete) => {
+    try {
+      await navigator.clipboard.writeText(construirResumenEvento(evento, paquete))
+      toast.success('Resumen copiado')
+    } catch (err) {
+      console.error(err)
+      toast.error('No se pudo copiar el resumen')
+    }
+  }
+
   const handleEliminar = async (id) => {
     if (!window.confirm('¿Eliminar este evento?')) return
     try {
@@ -149,9 +163,19 @@ export default function EventosList() {
     )
   })
   const porConfirmar = eventos.filter((e) => new Date(e.fecha) >= ahora && (e.estado ?? 'pendiente') === 'pendiente')
-  const ingresosEstimados = eventos
-    .filter((e) => new Date(e.fecha) >= ahora && ['pendiente', 'confirmado'].includes(e.estado ?? 'pendiente'))
-    .reduce((suma, e) => suma + precioEfectivo(e, paqueteDe(e)), 0)
+  const delMes = eventos.filter((e) => {
+    const fecha = new Date(e.fecha)
+    return fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear()
+  })
+  const realizadosMes = delMes.filter((e) => e.estado === 'realizado')
+  const noCanceladosMes = delMes.filter((e) => (e.estado ?? 'pendiente') !== 'cancelado')
+  const gananciaMes = realizadosMes.length * ganancia
+  const valorMes = noCanceladosMes.reduce((suma, e) => suma + precioEfectivo(e, paqueteDe(e)), 0)
+  const cobradoMes = noCanceladosMes.reduce((suma, e) => suma + (Number(e.abonado) || 0), 0)
+  const faltaMes = noCanceladosMes.reduce(
+    (suma, e) => suma + Math.max(precioEfectivo(e, paqueteDe(e)) - (Number(e.abonado) || 0), 0),
+    0,
+  )
 
   const textoBusqueda = busqueda.trim().toLowerCase()
   const eventosFiltrados = eventos.filter((evento) => {
@@ -167,6 +191,59 @@ export default function EventosList() {
   const totalPaginas = Math.max(1, Math.ceil(eventosFiltrados.length / POR_PAGINA))
   const paginaActual = Math.min(pagina, totalPaginas)
   const eventosPagina = eventosFiltrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
+
+  const renderEstado = (evento) => {
+    const config = ESTADOS[evento.estado ?? 'pendiente']
+    return (
+      <button
+        type="button"
+        onClick={(e) => abrirEstados(e, evento)}
+        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold transition hover:brightness-110 ${config.badge}`}
+      >
+        <span className={`size-1.5 rounded-full ${config.punto}`} />
+        {config.etiqueta}
+        <IconoChevron className="size-3 rotate-90" />
+      </button>
+    )
+  }
+
+  const renderAcciones = (evento, paquete) => (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => copiarResumen(evento, paquete)}
+        aria-label="Copiar resumen"
+        title="Copiar resumen"
+        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-amber-400"
+      >
+        <IconoCopiar className="size-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setVerDetalleId(evento.id)}
+        aria-label="Ver detalle"
+        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+      >
+        <IconoOjo className="size-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => abrirEdicion(evento.id)}
+        aria-label="Editar evento"
+        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+      >
+        <IconoLapiz className="size-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleEliminar(evento.id)}
+        aria-label="Eliminar evento"
+        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+      >
+        <IconoBasura className="size-4" />
+      </button>
+    </div>
+  )
 
   const actualizarFiltro = (setter) => (valor) => {
     setter(valor)
@@ -186,15 +263,22 @@ export default function EventosList() {
         </BotonPrimario>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <TarjetaEstadistica titulo="Eventos este mes" valor={eventosDelMes.length} icono={IconoCalendario} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TarjetaEstadistica
-          titulo="Ingresos estimados"
-          valor={formatearPrecio(ingresosEstimados)}
-          detalle="Próximos confirmados + pendientes"
+          titulo="Ganancia papayera · este mes"
+          valor={formatearPrecio(gananciaMes)}
+          detalle={`${realizadosMes.length} ${realizadosMes.length === 1 ? 'realizado' : 'realizados'} × ${formatearPrecio(ganancia)}`}
           icono={IconoDinero}
           destacada
         />
+        <TarjetaEstadistica
+          titulo="Ingresos generales · este mes"
+          valor={formatearPrecio(valorMes)}
+          detalle={`Falta por cobrar ${formatearPrecio(faltaMes)}`}
+          icono={IconoLista}
+          progreso={valorMes > 0 ? (cobradoMes / valorMes) * 100 : 0}
+        />
+        <TarjetaEstadistica titulo="Eventos este mes" valor={eventosDelMes.length} icono={IconoCalendario} />
         <TarjetaEstadistica titulo="Por confirmar" valor={porConfirmar.length} icono={IconoReloj} />
       </div>
 
@@ -259,7 +343,45 @@ export default function EventosList() {
           <p className="py-8 text-center text-sm text-slate-400">No hay eventos que coincidan con el filtro</p>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="space-y-3 md:hidden">
+              {eventosPagina.map((evento) => {
+                const paquete = paqueteDe(evento)
+                return (
+                  <article key={evento.id} className="space-y-3 rounded-lg border border-white/5 bg-slate-950/40 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${colorAvatar(evento.clientes?.nombre)}`}
+                        >
+                          {inicialesDe(evento.clientes?.nombre)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                          <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
+                        </div>
+                      </div>
+                      {renderEstado(evento)}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="text-slate-300">
+                        {formatearDia(evento.fecha)} {formatearMesCorto(evento.fecha)} · {formatearHora(evento.fecha)}
+                      </span>
+                      <span className="font-semibold text-white">{formatearPrecio(precioEfectivo(evento, paquete))}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-3">
+                      <span className="min-w-0 truncate text-xs text-slate-400">
+                        {paquete?.nombre ?? evento.paquetes?.nombre ?? 'Sin paquete'}
+                      </span>
+                      {renderAcciones(evento, paquete)}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/5 text-xs uppercase tracking-wide text-slate-400">
@@ -301,45 +423,8 @@ export default function EventosList() {
                         <td className="whitespace-nowrap px-2 py-3 font-medium text-white">
                           {formatearPrecio(precioEfectivo(evento, paquete))}
                         </td>
-                        <td className="whitespace-nowrap px-2 py-3">
-                          <button
-                            type="button"
-                            onClick={(e) => abrirEstados(e, evento)}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition hover:brightness-110 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
-                          >
-                            <span className={`size-1.5 rounded-full ${ESTADOS[evento.estado ?? 'pendiente'].punto}`} />
-                            {ESTADOS[evento.estado ?? 'pendiente'].etiqueta}
-                            <IconoChevron className="size-3 rotate-90" />
-                          </button>
-                        </td>
-                        <td className="whitespace-nowrap px-2 py-3">
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setVerDetalleId(evento.id)}
-                              aria-label="Ver detalle"
-                              className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
-                            >
-                              <IconoOjo className="size-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => abrirEdicion(evento.id)}
-                              aria-label="Editar evento"
-                              className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
-                            >
-                              <IconoLapiz className="size-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleEliminar(evento.id)}
-                              aria-label="Eliminar evento"
-                              className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
-                            >
-                              <IconoBasura className="size-4" />
-                            </button>
-                          </div>
-                        </td>
+                        <td className="px-2 py-3">{renderEstado(evento)}</td>
+                        <td className="px-2 py-3">{renderAcciones(evento, paquete)}</td>
                       </tr>
                     )
                   })}

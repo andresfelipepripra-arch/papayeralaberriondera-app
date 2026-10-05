@@ -122,6 +122,16 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
       return
     }
 
+    if (!esEdicion && !form.ciudad.trim()) {
+      toast.error('La ciudad es obligatoria')
+      return
+    }
+
+    if (!esEdicion && !form.ubicacion.trim()) {
+      toast.error('La dirección es obligatoria')
+      return
+    }
+
     if (abonado < 0) {
       toast.error('El abonado no puede ser negativo')
       return
@@ -183,6 +193,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
   const estiloCampo =
     'w-full rounded-lg border border-white/5 bg-slate-800/60 px-4 py-3.5 text-sm text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30'
   const estiloLabel = 'mb-2 block text-sm font-semibold text-slate-100'
+  const marcaObligatorio = esEdicion ? null : <span className="text-amber-400">*</span>
 
   return (
     <Modal
@@ -198,9 +209,16 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="cliente_id" className={estiloLabel}>
-                Cliente
+                Cliente {marcaObligatorio}
               </label>
-              <select id="cliente_id" name="cliente_id" value={form.cliente_id} onChange={handleClienteChange} className={estiloCampo}>
+              <select
+                id="cliente_id"
+                name="cliente_id"
+                value={form.cliente_id}
+                onChange={handleClienteChange}
+                required={!esEdicion}
+                className={estiloCampo}
+              >
                 <option value="">Selecciona un cliente</option>
                 {clientes.map((cliente) => (
                   <option key={cliente.id} value={cliente.id}>
@@ -212,9 +230,16 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
 
             <div>
               <label htmlFor="paquete_id" className={estiloLabel}>
-                Paquete
+                Paquete {marcaObligatorio}
               </label>
-              <select id="paquete_id" name="paquete_id" value={form.paquete_id} onChange={handlePaqueteChange} className={estiloCampo}>
+              <select
+                id="paquete_id"
+                name="paquete_id"
+                value={form.paquete_id}
+                onChange={handlePaqueteChange}
+                required={!esEdicion}
+                className={estiloCampo}
+              >
                 <option value="">Selecciona un paquete</option>
                 {paquetes.map((paquete) => (
                   <option key={paquete.id} value={paquete.id}>
@@ -311,7 +336,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="fecha" className={estiloLabel}>
-                Fecha y hora
+                Fecha y hora {marcaObligatorio}
               </label>
               <input
                 id="fecha"
@@ -328,16 +353,32 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="ciudad" className={estiloLabel}>
-                Ciudad
+                Ciudad {marcaObligatorio}
               </label>
-              <input id="ciudad" name="ciudad" type="text" value={form.ciudad} onChange={handleChange} className={estiloCampo} />
+              <input
+                id="ciudad"
+                name="ciudad"
+                type="text"
+                value={form.ciudad}
+                onChange={handleChange}
+                required={!esEdicion}
+                className={estiloCampo}
+              />
             </div>
 
             <div>
               <label htmlFor="ubicacion" className={estiloLabel}>
-                Ubicación
+                Dirección {marcaObligatorio}
               </label>
-              <input id="ubicacion" name="ubicacion" type="text" value={form.ubicacion} onChange={handleChange} className={estiloCampo} />
+              <input
+                id="ubicacion"
+                name="ubicacion"
+                type="text"
+                value={form.ubicacion}
+                onChange={handleChange}
+                required={!esEdicion}
+                className={estiloCampo}
+              />
             </div>
           </div>
 

@@ -250,7 +250,7 @@ export default function Paquetes() {
             return (
               <div
                 key={paquete.id}
-                className={`relative flex flex-col rounded-xl border p-6 ${
+                className={`relative flex flex-col rounded-xl border p-5 sm:p-6 ${
                   popular ? 'border-amber-500/60 bg-amber-500/5 ring-1 ring-amber-500/30' : 'border-white/5 bg-slate-900/60'
                 }`}
               >

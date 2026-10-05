@@ -87,6 +87,14 @@ function validarYNormalizar(body) {
     datos.dias_recordatorio = dias
   }
 
+  if (body.ganancia_por_evento !== undefined) {
+    const ganancia = body.ganancia_por_evento
+    if (typeof ganancia !== 'number' || !Number.isFinite(ganancia) || ganancia < 0) {
+      return { error: 'ganancia_por_evento debe ser un número mayor o igual a 0' }
+    }
+    datos.ganancia_por_evento = ganancia
+  }
+
   if (body.dias_confirmacion !== undefined) {
     const dias = body.dias_confirmacion
     if (!Number.isInteger(dias) || dias < 0 || dias > 90) {

@@ -32,6 +32,30 @@ export async function listarEventosVigentes(maxDias) {
   return data
 }
 
+// Pasa a realizado los eventos que ya ocurrieron y todavía están pendientes o
+// confirmados, y los marca como pagados por completo. Los cancelados no se tocan.
+export async function completarEventosVencidos() {
+  const { data, error } = await supabase
+    .from('eventos')
+    .select('id, precio, paquetes(precio)')
+    .in('estado', ['pendiente', 'confirmado'])
+    .lt('fecha', new Date().toISOString())
+
+  if (error) throw new Error(error.message)
+
+  for (const evento of data) {
+    const total = evento.precio ?? evento.paquetes?.precio ?? 0
+    const { error: errorUpdate } = await supabase
+      .from('eventos')
+      .update({ estado: 'realizado', abonado: total })
+      .eq('id', evento.id)
+
+    if (errorUpdate) throw new Error(errorUpdate.message)
+  }
+
+  return data.length
+}
+
 export async function marcarRecordatorioEnviado(id) {
   const { error } = await supabase
     .from('eventos')

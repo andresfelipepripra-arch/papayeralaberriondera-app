@@ -1,7 +1,7 @@
-export default function TarjetaEstadistica({ titulo, valor, detalle, icono: Icono, destacada = false }) {
+export default function TarjetaEstadistica({ titulo, valor, detalle, icono: Icono, destacada = false, progreso }) {
   return (
     <div
-      className={`rounded-xl border p-6 ${
+      className={`rounded-xl border p-5 sm:p-6 ${
         destacada
           ? 'border-transparent bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
           : 'border-white/5 bg-slate-900/60'
@@ -24,6 +24,14 @@ export default function TarjetaEstadistica({ titulo, valor, detalle, icono: Icon
       </p>
       {detalle && (
         <p className={`mt-1 text-xs ${destacada ? 'text-slate-900/75' : 'text-slate-500'}`}>{detalle}</p>
+      )}
+      {progreso !== undefined && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
+          <div
+            className="h-full rounded-full bg-emerald-500"
+            style={{ width: `${Math.min(100, Math.max(0, progreso))}%` }}
+          />
+        </div>
       )}
     </div>
   )

@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale'
 import { getEventos } from '../services/eventosService'
 import { paquetesService } from '../services/paquetesService'
 import { useAuth } from '../context/AuthContext'
+import { useConfiguracion } from '../context/ConfiguracionContext'
 import {
   formatearDia,
   formatearFechaConDia,
@@ -43,12 +44,19 @@ import {
   IconoReloj,
 } from '../components/ui/Iconos'
 
+const GANANCIA_POR_DEFECTO = 70000
+
 const PALETA_DONUT = [
   { trazo: 'stroke-amber-500', punto: 'bg-amber-500' },
   { trazo: 'stroke-indigo-400', punto: 'bg-indigo-400' },
   { trazo: 'stroke-emerald-400', punto: 'bg-emerald-400' },
   { trazo: 'stroke-sky-400', punto: 'bg-sky-400' },
   { trazo: 'stroke-slate-500', punto: 'bg-slate-500' },
+]
+
+const OPCIONES_VISTA = [
+  { valor: 'ganancia', etiqueta: 'Ganancia papayera' },
+  { valor: 'valor', etiqueta: 'Valor del evento' },
 ]
 
 const estadoDe = (evento) => evento.estado ?? 'pendiente'
@@ -85,10 +93,13 @@ export default function Dashboard() {
   const [error, setError] = useState(null)
   const [modoPeriodo, setModoPeriodo] = useState('mes')
   const [valorPeriodo, setValorPeriodo] = useState(() => format(new Date(), 'yyyy-MM'))
+  const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [modoVista, setModoVista] = useState('ganancia')
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [verDetalleId, setVerDetalleId] = useState(null)
   const { user } = useAuth()
+  const { configuracion } = useConfiguracion() ?? {}
 
   const cargar = async () => {
     try {
@@ -110,6 +121,7 @@ export default function Dashboard() {
   if (loading) return <p className="text-slate-400">Cargando resumen...</p>
   if (error) return <p className="text-red-400">{error}</p>
 
+  const ganancia = Number(configuracion?.ganancia_por_evento ?? GANANCIA_POR_DEFECTO)
   const ahora = new Date()
   const paquetesPorId = Object.fromEntries(paquetes.map((p) => [p.id, p]))
   const precioDe = (evento) => precioEfectivo(evento, paquetesPorId[evento.paquete_id])
@@ -128,7 +140,7 @@ export default function Dashboard() {
   const usuario = (user?.email ?? '').split('@')[0]
   const nombre = usuario.charAt(0).toUpperCase() + usuario.slice(1)
 
-  // --- Según el período seleccionado: todo lo demás ---
+  // --- Según los filtros: periodo, estado y vista ---
   const cambiarModoPeriodo = (modo) => {
     setModoPeriodo(modo)
     if (modo === 'dia') setValorPeriodo(format(ahora, 'yyyy-MM-dd'))
@@ -155,31 +167,106 @@ export default function Dashboard() {
       return fecha >= periodo.inicio && fecha <= periodo.fin
     })
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
-  const eventosPeriodoVisibles = eventosPeriodo.slice(0, 8)
+  const eventosFiltrados = eventosPeriodo.filter((e) => filtroEstado === 'todos' || estadoDe(e) === filtroEstado)
+  const eventosVisibles = eventosFiltrados.slice(0, 8)
 
-  const noCanceladosPeriodo = eventosPeriodo.filter((e) => estadoDe(e) !== 'cancelado')
-  const realizadosPeriodo = eventosPeriodo.filter((e) => estadoDe(e) === 'realizado').length
-  const pendientesPeriodo = eventosPeriodo.filter((e) => estadoDe(e) === 'pendiente').length
-  const ingresosPeriodo = noCanceladosPeriodo.reduce((suma, e) => suma + precioDe(e), 0)
+  const realizados = eventosFiltrados.filter((e) => estadoDe(e) === 'realizado')
+  const porRealizar = eventosFiltrados.filter((e) => ['pendiente', 'confirmado'].includes(estadoDe(e)))
+  const noCancelados = eventosFiltrados.filter((e) => estadoDe(e) !== 'cancelado')
+  const cancelados = eventosFiltrados.filter((e) => estadoDe(e) === 'cancelado').length
+  const pendientes = eventosFiltrados.filter((e) => estadoDe(e) === 'pendiente').length
+
+  const gananciaPapayera = realizados.length * ganancia
+  const gananciaProyectada = porRealizar.length * ganancia
+  const valorTotal = noCancelados.reduce((suma, e) => suma + precioDe(e), 0)
+  const cobrado = noCancelados.reduce((suma, e) => suma + (Number(e.abonado) || 0), 0)
+  const faltaPorCobrar = noCancelados.reduce(
+    (suma, e) => suma + Math.max(precioDe(e) - (Number(e.abonado) || 0), 0),
+    0,
+  )
+  const porcentajeCobrado = valorTotal > 0 ? Math.round((cobrado / valorTotal) * 100) : 0
+
+  const metricaEvento = (evento) => {
+    if (modoVista === 'ganancia') return estadoDe(evento) === 'realizado' ? ganancia : 0
+    return estadoDe(evento) === 'cancelado' ? 0 : precioDe(evento)
+  }
 
   const conteoPorEstadoPeriodo = Object.fromEntries(
     ORDEN_ESTADOS.map((estado) => [estado, eventosPeriodo.filter((e) => estadoDe(e) === estado).length]),
   )
 
   const ingresosPorPaquete = Object.values(
-    noCanceladosPeriodo.reduce((acc, e) => {
-      const precio = precioDe(e)
-      if (!precio) return acc
+    eventosFiltrados.reduce((acc, e) => {
+      const valor = metricaEvento(e)
+      if (!valor) return acc
       acc[e.paquete_id] ??= { id: e.paquete_id, nombre: e.paquetes?.nombre ?? 'Paquete', valor: 0 }
-      acc[e.paquete_id].valor += precio
+      acc[e.paquete_id].valor += valor
       return acc
     }, {}),
   ).sort((a, b) => b.valor - a.valor)
+  const totalDonut = ingresosPorPaquete.reduce((suma, p) => suma + p.valor, 0)
   const otrosPaquetes = ingresosPorPaquete.slice(4).reduce((suma, p) => suma + p.valor, 0)
   const segmentosDonut = [
     ...ingresosPorPaquete.slice(0, 4),
     ...(otrosPaquetes > 0 ? [{ id: 'otros', nombre: 'Otros', valor: otrosPaquetes }] : []),
   ].map((segmento, i) => ({ ...segmento, ...PALETA_DONUT[i] }))
+
+  const tarjetas =
+    modoVista === 'ganancia'
+      ? [
+          {
+            titulo: 'Ganancia papayera',
+            valor: formatearPrecio(gananciaPapayera),
+            detalle: `${realizados.length} ${realizados.length === 1 ? 'evento realizado' : 'eventos realizados'} × ${formatearPrecio(ganancia)}`,
+            icono: IconoDinero,
+            destacada: true,
+          },
+          {
+            titulo: 'Ganancia proyectada',
+            valor: formatearPrecio(gananciaProyectada),
+            detalle: 'Pendientes y confirmados del período',
+            icono: IconoCheckCirculo,
+          },
+          {
+            titulo: 'Eventos del período',
+            valor: eventosFiltrados.length,
+            detalle: `${cancelados} cancelados`,
+            icono: IconoCalendario,
+          },
+          {
+            titulo: 'Pendientes',
+            valor: pendientes,
+            detalle: 'Sin confirmar',
+            icono: IconoReloj,
+          },
+        ]
+      : [
+          {
+            titulo: 'Valor de eventos',
+            valor: formatearPrecio(valorTotal),
+            detalle: 'Sin contar cancelados',
+            icono: IconoDinero,
+            destacada: true,
+          },
+          {
+            titulo: 'Cobrado',
+            valor: formatearPrecio(cobrado),
+            detalle: `${porcentajeCobrado}% del valor`,
+            icono: IconoCheckCirculo,
+          },
+          {
+            titulo: 'Falta por cobrar',
+            valor: formatearPrecio(faltaPorCobrar),
+            detalle: 'Suma de saldos pendientes',
+            icono: IconoReloj,
+          },
+          {
+            titulo: 'Eventos del período',
+            valor: eventosFiltrados.length,
+            detalle: `${cancelados} cancelados`,
+            icono: IconoCalendario,
+          },
+        ]
 
   return (
     <div className="space-y-6">
@@ -224,97 +311,126 @@ export default function Dashboard() {
         </p>
       </section>
 
-      <Panel titulo="Filtrar por período" subtitulo="Cambia el resto del panel a lo que pasó en un día, mes o año">
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { modo: 'dia', etiqueta: 'Día' },
-            { modo: 'mes', etiqueta: 'Mes' },
-            { modo: 'anio', etiqueta: 'Año' },
-          ].map(({ modo, etiqueta }) => (
-            <button
-              key={modo}
-              type="button"
-              onClick={() => cambiarModoPeriodo(modo)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                modoPeriodo === modo
-                  ? 'bg-amber-500 text-slate-950'
-                  : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
-              }`}
-            >
-              {etiqueta}
-            </button>
-          ))}
+      <Panel titulo="Filtros" subtitulo="Cambian todas las cifras y listas de abajo">
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { modo: 'dia', etiqueta: 'Día' },
+              { modo: 'mes', etiqueta: 'Mes' },
+              { modo: 'anio', etiqueta: 'Año' },
+            ].map(({ modo, etiqueta }) => (
+              <button
+                key={modo}
+                type="button"
+                onClick={() => cambiarModoPeriodo(modo)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  modoPeriodo === modo
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
+                }`}
+              >
+                {etiqueta}
+              </button>
+            ))}
 
-          <div className="ml-1 flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => moverPeriodo(-1)}
-              aria-label="Período anterior"
-              className="flex size-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/5 hover:text-white"
-            >
-              <IconoChevron className="size-4 rotate-180" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moverPeriodo(1)}
-              aria-label="Período siguiente"
-              className="flex size-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/5 hover:text-white"
-            >
-              <IconoChevron className="size-4" />
-            </button>
+            <div className="ml-1 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => moverPeriodo(-1)}
+                aria-label="Período anterior"
+                className="flex size-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/5 hover:text-white"
+              >
+                <IconoChevron className="size-4 rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => moverPeriodo(1)}
+                aria-label="Período siguiente"
+                className="flex size-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/5 hover:text-white"
+              >
+                <IconoChevron className="size-4" />
+              </button>
+            </div>
+
+            {modoPeriodo === 'dia' && (
+              <input
+                type="date"
+                value={valorPeriodo}
+                onChange={(e) => setValorPeriodo(e.target.value)}
+                className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+            )}
+            {modoPeriodo === 'mes' && (
+              <input
+                type="month"
+                value={valorPeriodo}
+                onChange={(e) => setValorPeriodo(e.target.value)}
+                className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+            )}
+            {modoPeriodo === 'anio' && (
+              <input
+                type="number"
+                value={valorPeriodo}
+                onChange={(e) => setValorPeriodo(e.target.value)}
+                className="w-24 rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+            )}
+
+            <span className="ml-1 text-sm font-semibold capitalize text-white">{periodo.etiqueta}</span>
           </div>
 
-          {modoPeriodo === 'dia' && (
-            <input
-              type="date"
-              value={valorPeriodo}
-              onChange={(e) => setValorPeriodo(e.target.value)}
-              className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-            />
-          )}
-          {modoPeriodo === 'mes' && (
-            <input
-              type="month"
-              value={valorPeriodo}
-              onChange={(e) => setValorPeriodo(e.target.value)}
-              className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-            />
-          )}
-          {modoPeriodo === 'anio' && (
-            <input
-              type="number"
-              value={valorPeriodo}
-              onChange={(e) => setValorPeriodo(e.target.value)}
-              className="w-24 rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-            />
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
+            {[{ valor: 'todos', etiqueta: 'Todos' }, ...ORDEN_ESTADOS.map((e) => ({ valor: e, etiqueta: ESTADOS[e].etiqueta }))].map(
+              ({ valor, etiqueta }) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setFiltroEstado(valor)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    filtroEstado === valor
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
+                  }`}
+                >
+                  {valor !== 'todos' && <span className={`size-1.5 rounded-full ${ESTADOS[valor].punto}`} />}
+                  {etiqueta}
+                </button>
+              ),
+            )}
+          </div>
 
-          <span className="ml-1 text-sm font-semibold capitalize text-white">{periodo.etiqueta}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Ver por</span>
+            {OPCIONES_VISTA.map(({ valor, etiqueta }) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => setModoVista(valor)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  modoVista === valor
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
+                }`}
+              >
+                {etiqueta}
+              </button>
+            ))}
+          </div>
         </div>
       </Panel>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TarjetaEstadistica
-          titulo="Eventos del período"
-          valor={eventosPeriodo.length}
-          detalle={`${conteoPorEstadoPeriodo.cancelado} cancelados`}
-          icono={IconoCalendario}
-        />
-        <TarjetaEstadistica
-          titulo="Ingresos del período"
-          valor={formatearPrecio(ingresosPeriodo)}
-          detalle="Sin contar cancelados"
-          icono={IconoDinero}
-          destacada
-        />
-        <TarjetaEstadistica titulo="Realizados" valor={realizadosPeriodo} icono={IconoCheckCirculo} />
-        <TarjetaEstadistica titulo="Pendientes" valor={pendientesPeriodo} icono={IconoReloj} />
+        {tarjetas.map((tarjeta) => (
+          <TarjetaEstadistica key={tarjeta.titulo} {...tarjeta} />
+        ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
         <Panel
           titulo={`Eventos · ${periodo.etiqueta}`}
-          subtitulo={`${eventosPeriodo.length} ${eventosPeriodo.length === 1 ? 'evento' : 'eventos'}`}
+          subtitulo={`${eventosFiltrados.length} ${eventosFiltrados.length === 1 ? 'evento' : 'eventos'}`}
           className="xl:col-span-2"
           accion={
             <Link
@@ -326,11 +442,11 @@ export default function Dashboard() {
             </Link>
           }
         >
-          {eventosPeriodo.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">No hay eventos en este período</p>
+          {eventosFiltrados.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">No hay eventos con estos filtros</p>
           ) : (
             <ul className="divide-y divide-white/5">
-              {eventosPeriodoVisibles.map((evento) => (
+              {eventosVisibles.map((evento) => (
                 <li key={evento.id}>
                   <button
                     type="button"
@@ -338,17 +454,13 @@ export default function Dashboard() {
                     className="flex w-full items-center gap-4 rounded-lg px-2 py-3 text-left transition hover:bg-white/5"
                   >
                     <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-slate-950/60">
-                      <span className="text-lg font-bold leading-none text-amber-400">
-                        {formatearDia(evento.fecha)}
-                      </span>
+                      <span className="text-lg font-bold leading-none text-amber-400">{formatearDia(evento.fecha)}</span>
                       <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                         {formatearMesCorto(evento.fecha)}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {evento.clientes?.nombre ?? 'Sin cliente'}
-                      </p>
+                      <p className="truncate text-sm font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
                       <p className="truncate text-xs text-slate-400">
                         {evento.ubicacion ?? 'Sin ubicación'} · {formatearHora(evento.fecha)}
                       </p>
@@ -356,8 +468,7 @@ export default function Dashboard() {
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <EstadoBadge estado={estadoDe(evento)} />
                       <span className="text-xs text-slate-400">
-                        {evento.paquetes?.nombre ?? 'Sin paquete'}
-                        {precioDe(evento) > 0 && ` · ${formatearPrecio(precioDe(evento))}`}
+                        {evento.paquetes?.nombre ?? 'Sin paquete'} · {formatearPrecio(precioDe(evento))}
                       </span>
                     </div>
                   </button>
@@ -365,9 +476,9 @@ export default function Dashboard() {
               ))}
             </ul>
           )}
-          {eventosPeriodo.length > eventosPeriodoVisibles.length && (
+          {eventosFiltrados.length > eventosVisibles.length && (
             <p className="mt-3 text-center text-xs text-slate-500">
-              y {eventosPeriodo.length - eventosPeriodoVisibles.length} más
+              y {eventosFiltrados.length - eventosVisibles.length} más
             </p>
           )}
         </Panel>
@@ -398,9 +509,12 @@ export default function Dashboard() {
             )}
           </Panel>
 
-          <Panel titulo="Ingresos por paquete" subtitulo={periodo.etiqueta}>
+          <Panel
+            titulo={modoVista === 'ganancia' ? 'Ganancia por paquete' : 'Valor por paquete'}
+            subtitulo={periodo.etiqueta}
+          >
             {segmentosDonut.length === 0 ? (
-              <p className="py-4 text-center text-sm text-slate-400">Sin ingresos en este período</p>
+              <p className="py-4 text-center text-sm text-slate-400">Sin datos en este período</p>
             ) : (
               <div className="flex flex-wrap items-center gap-6">
                 <Donut
@@ -408,7 +522,7 @@ export default function Dashboard() {
                   centro={
                     <>
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Total</span>
-                      <span className="text-lg font-bold text-white">{formatearPrecioCorto(ingresosPeriodo)}</span>
+                      <span className="text-lg font-bold text-white">{formatearPrecioCorto(totalDonut)}</span>
                     </>
                   }
                 />
@@ -418,7 +532,7 @@ export default function Dashboard() {
                       <span className={`size-2 shrink-0 rounded-full ${segmento.punto}`} />
                       <span className="min-w-0 flex-1 truncate text-slate-300">{segmento.nombre}</span>
                       <span className="font-semibold text-white">
-                        {Math.round((segmento.valor / ingresosPeriodo) * 100)}%
+                        {Math.round((segmento.valor / totalDonut) * 100)}%
                       </span>
                     </li>
                   ))}
@@ -440,9 +554,7 @@ export default function Dashboard() {
                       className="flex w-full items-start justify-between gap-3 rounded-lg px-1 py-2.5 text-left transition hover:bg-white/5"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">
-                          {evento.clientes?.nombre ?? 'Sin cliente'}
-                        </p>
+                        <p className="truncate text-sm font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
                         <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
                       </div>
                       <span className="shrink-0 text-xs text-slate-400">{formatearFechaCorta(evento.fecha)}</span>

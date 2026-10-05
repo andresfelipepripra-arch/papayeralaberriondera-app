@@ -30,7 +30,7 @@ export default function Modal({ abierto, onCerrar, titulo, subtitulo, icono: Ico
       <div
         className={`relative flex max-h-[90vh] w-full ${ancho} flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl`}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/5 px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/5 px-5 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
             {Icono && (
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
@@ -52,7 +52,7 @@ export default function Modal({ abierto, onCerrar, titulo, subtitulo, icono: Ico
           </button>
         </div>
 
-        <div className="overflow-y-auto px-6 py-6">{children}</div>
+        <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">{children}</div>
       </div>
     </div>
   )

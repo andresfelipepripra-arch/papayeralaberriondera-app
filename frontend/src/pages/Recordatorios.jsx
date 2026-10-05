@@ -294,7 +294,7 @@ export default function Recordatorios() {
                 )}
               </div>
               <div
-                className="mt-3 max-h-96 overflow-y-auto rounded-lg bg-white p-4"
+                className="mt-3 max-h-96 overflow-auto rounded-lg bg-white p-4"
                 dangerouslySetInnerHTML={{ __html: preview.html }}
               />
             </div>

@@ -5,8 +5,9 @@ import { actualizarConfiguracion, getConfiguracion } from '../services/configura
 import Panel from '../components/ui/Panel'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import { IconoCorreo, IconoNotaMusical, IconoTelefono } from '../components/ui/Iconos'
+import { formatearPrecio } from '../utils/formatters'
 
-const vacio = { nombre_negocio: '', telefono: '', correo_contacto: '', logo_url: '' }
+const vacio = { nombre_negocio: '', telefono: '', correo_contacto: '', logo_url: '', ganancia_por_evento: '' }
 
 const estiloCampo =
   'w-full rounded-lg border border-white/5 bg-slate-800/60 px-4 py-3.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30'
@@ -18,6 +19,7 @@ function aFormulario(configuracion) {
     telefono: configuracion.telefono ?? '',
     correo_contacto: configuracion.correo_contacto ?? '',
     logo_url: configuracion.logo_url ?? '',
+    ganancia_por_evento: String(configuracion.ganancia_por_evento ?? 70000),
   }
 }
 
@@ -58,9 +60,15 @@ export default function Configuracion() {
       return
     }
 
+    const ganancia = Number(form.ganancia_por_evento)
+    if (form.ganancia_por_evento === '' || !Number.isFinite(ganancia) || ganancia < 0) {
+      toast.error('La ganancia por evento debe ser un número mayor o igual a 0')
+      return
+    }
+
     setGuardando(true)
     try {
-      const data = await actualizarConfiguracion(form)
+      const data = await actualizarConfiguracion({ ...form, ganancia_por_evento: ganancia })
       setConfiguracion(data)
       setForm(aFormulario(data))
       toast.success('Configuración actualizada')
@@ -101,6 +109,31 @@ export default function Configuracion() {
                 placeholder="Papayera La Berriondera"
                 className={estiloCampo}
               />
+            </div>
+          </Panel>
+
+          <Panel
+            titulo="Ganancia por evento"
+            subtitulo="Monto fijo que se queda la papayera en cada evento realizado, sin importar el valor final."
+          >
+            <div className="max-w-sm">
+              <label htmlFor="ganancia_por_evento" className={estiloLabel}>
+                Ganancia por evento (COP)
+              </label>
+              <input
+                id="ganancia_por_evento"
+                name="ganancia_por_evento"
+                type="number"
+                step="1000"
+                min="0"
+                value={form.ganancia_por_evento}
+                onChange={handleChange}
+                placeholder="70000"
+                className={estiloCampo}
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Se aplica igual sin importar si el evento termina costando más. Vista: {formatearPrecio(form.ganancia_por_evento)}
+              </p>
             </div>
           </Panel>
 
