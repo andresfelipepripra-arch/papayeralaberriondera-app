@@ -30,7 +30,7 @@ export async function registrarEnvio({ eventoId, clienteId, tipo, destinatario, 
 export async function listarHistorial(limite = 50) {
   const { data, error } = await supabase
     .from('correos_enviados')
-    .select('*, eventos (fecha, ubicacion), clientes (nombre, correo)')
+    .select('*, eventos (fecha, ubicacion, nombre_cliente)')
     .order('created_at', { ascending: false })
     .limit(limite)
 

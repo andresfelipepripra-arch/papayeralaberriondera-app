@@ -9,7 +9,6 @@ import {
   IconoEscudo,
   IconoLista,
   IconoSalir,
-  IconoUsuarios,
 } from '../ui/Iconos'
 import logo from '../../assets/logo-papayera.png'
 
@@ -18,7 +17,6 @@ const links = [
   { to: '/calendario', label: 'Calendario', icono: IconoCalendario },
   { to: '/eventos', label: 'Eventos', icono: IconoLista },
   { to: '/paquetes', label: 'Paquetes', icono: IconoCubo },
-  { to: '/clientes', label: 'Clientes', icono: IconoUsuarios },
   { to: '/usuarios', label: 'Usuarios', icono: IconoEscudo, soloAdmin: true },
   { to: '/recordatorios', label: 'Recordatorios', icono: IconoCampana, soloAdmin: true },
   { to: '/configuracion', label: 'Configuración', icono: IconoAjustes, soloAdmin: true },

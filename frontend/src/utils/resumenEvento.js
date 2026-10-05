@@ -19,7 +19,7 @@ export function construirResumenEvento(evento, paquete) {
 
   const dia = format(fecha, 'EEEE', { locale: es })
   const lineasContacto = [
-    [evento.telefono_contacto ?? evento.clientes?.telefono, evento.nombre_contacto ?? evento.clientes?.nombre]
+    [evento.telefono_contacto, evento.nombre_contacto ?? evento.nombre_cliente]
       .filter(Boolean)
       .join(' - '),
     [evento.telefono_alterno, evento.nombre_telefono_alterno].filter(Boolean).join(' - '),

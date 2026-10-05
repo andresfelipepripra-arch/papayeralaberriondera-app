@@ -100,7 +100,7 @@ export default function PaqueteDetalleModal({ paquete, eventos, onCerrar, onEdit
                   {eventosDelPaquete.slice(0, MAX_EVENTOS_LISTADOS).map((evento) => (
                     <li key={evento.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                        <p className="truncate text-sm font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                         <p className="text-xs text-slate-400">{formatearFechaHora(evento.fecha)}</p>
                       </div>
                       <div className="flex items-center gap-3">

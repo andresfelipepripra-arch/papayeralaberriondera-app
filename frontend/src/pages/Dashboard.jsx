@@ -460,7 +460,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                      <p className="truncate text-sm font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                       <p className="truncate text-xs text-slate-400">
                         {evento.ubicacion ?? 'Sin ubicación'} · {formatearHora(evento.fecha)}
                       </p>
@@ -554,7 +554,7 @@ export default function Dashboard() {
                       className="flex w-full items-start justify-between gap-3 rounded-lg px-1 py-2.5 text-left transition hover:bg-white/5"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                        <p className="truncate text-sm font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                         <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
                       </div>
                       <span className="shrink-0 text-xs text-slate-400">{formatearFechaCorta(evento.fecha)}</span>

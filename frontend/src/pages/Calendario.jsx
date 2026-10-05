@@ -199,10 +199,10 @@ export default function Calendario() {
                       key={evento.id}
                       type="button"
                       onClick={() => setVerDetalleId(evento.id)}
-                      title={`${formatearHora(evento.fecha)} · ${evento.clientes?.nombre ?? 'Evento'}`}
+                      title={`${formatearHora(evento.fecha)} · ${evento.nombre_cliente ?? 'Evento'}`}
                       className={`block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
                     >
-                      {evento.clientes?.nombre ?? evento.ubicacion ?? 'Evento'}
+                      {evento.nombre_cliente ?? evento.ubicacion ?? 'Evento'}
                     </button>
                   ))}
                   {eventosDelDia.length > 3 && (
@@ -228,7 +228,7 @@ export default function Calendario() {
                 onClick={() => setVerDetalleId(evento.id)}
                 className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
               >
-                <span className="truncate font-semibold">{evento.clientes?.nombre ?? 'Evento'}</span>
+                <span className="truncate font-semibold">{evento.nombre_cliente ?? 'Evento'}</span>
                 <span className="shrink-0 text-xs">{formatearHora(evento.fecha)}</span>
               </button>
             ))

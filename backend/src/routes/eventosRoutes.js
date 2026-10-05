@@ -7,7 +7,7 @@ router.get('/', async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('eventos')
-      .select('*, clientes(nombre, correo, telefono), paquetes(nombre, precio, duracion_horas)')
+      .select('*, paquetes(nombre, precio, duracion_horas)')
       .order('fecha', { ascending: true })
 
     if (error) throw new Error(error.message)
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('eventos')
-      .select('*, clientes(nombre, correo, telefono, ciudad), paquetes(nombre, descripcion, precio, duracion_horas, incluye)')
+      .select('*, paquetes(nombre, descripcion, precio, duracion_horas, incluye)')
       .eq('id', req.params.id)
       .single()
 
@@ -34,6 +34,10 @@ router.get('/:id', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
+  if (typeof req.body.nombre_cliente !== 'string' || !req.body.nombre_cliente.trim()) {
+    return res.status(400).json({ error: 'El nombre del cliente es obligatorio' })
+  }
+
   try {
     const { data, error } = await supabase
       .from('eventos')

@@ -314,7 +314,7 @@ export default function Recordatorios() {
                 <IconoSobre className="size-4 shrink-0 text-slate-500" />
                 <span className="w-40 shrink-0 text-xs text-slate-400">{formatearFechaHora(fila.created_at)}</span>
                 <div className="min-w-[180px] flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{fila.clientes?.nombre ?? 'Cliente eliminado'}</p>
+                  <p className="truncate text-sm font-semibold text-white">{fila.eventos?.nombre_cliente ?? 'Cliente eliminado'}</p>
                   <p className="truncate text-xs text-slate-400">{etiquetaTipo(fila.tipo)}</p>
                 </div>
                 <div className="min-w-[160px] flex-1">

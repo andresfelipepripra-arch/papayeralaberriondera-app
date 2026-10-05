@@ -7,7 +7,6 @@ import Dashboard from '../pages/Dashboard'
 import EventosList from '../pages/Eventos/EventosList'
 import Calendario from '../pages/Calendario'
 import Paquetes from '../pages/Paquetes'
-import Clientes from '../pages/Clientes'
 import Usuarios from '../pages/Usuarios'
 import Configuracion from '../pages/Configuracion'
 import Recordatorios from '../pages/Recordatorios'
@@ -21,7 +20,6 @@ export default function AppRoutes() {
         <Route path="eventos" element={<EventosList />} />
         <Route path="calendario" element={<Calendario />} />
         <Route path="paquetes" element={<Paquetes />} />
-        <Route path="clientes" element={<Clientes />} />
         <Route path="usuarios" element={<Usuarios />} />
         <Route path="configuracion" element={<RutaAdmin><Configuracion /></RutaAdmin>} />
         <Route path="recordatorios" element={<RutaAdmin><Recordatorios /></RutaAdmin>} />

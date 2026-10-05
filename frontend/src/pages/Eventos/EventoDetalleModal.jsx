@@ -89,11 +89,10 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
     }
   }
 
-  const cliente = evento?.clientes
+  const cliente = evento ? { nombre: evento.nombre_cliente, correo: evento.correo_cliente } : undefined
   const paquete = evento?.paquetes
   const items = itemsDeIncluye(paquete?.incluye)
-  const telefonoRegistrado = cliente?.telefono
-  const telefonoEvento = evento?.telefono_contacto
+  const telefono = evento?.telefono_contacto
   const total = evento ? precioEfectivo(evento, paquete) : 0
   const abonado = Number(evento?.abonado) || 0
   const falta = total - abonado
@@ -155,7 +154,6 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
                     </span>
                     <div>
                       <p className="font-semibold text-white">{cliente.nombre}</p>
-                      {cliente.ciudad && <p className="text-xs text-slate-400">{cliente.ciudad}</p>}
                     </div>
                   </div>
 
@@ -170,16 +168,8 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
                       </p>
                     )}
 
-                    {telefonoEvento || telefonoRegistrado ? (
-                      <>
-                        <FilaTelefono
-                          numero={telefonoEvento || telefonoRegistrado}
-                          etiqueta={telefonoEvento && telefonoEvento !== telefonoRegistrado ? 'del evento' : null}
-                        />
-                        {telefonoRegistrado && telefonoEvento && telefonoRegistrado !== telefonoEvento && (
-                          <FilaTelefono numero={telefonoRegistrado} etiqueta="registrado del cliente" />
-                        )}
-                      </>
+                    {telefono ? (
+                      <FilaTelefono numero={telefono} />
                     ) : (
                       <p className="flex items-center gap-2 text-slate-500">
                         <IconoTelefono className="size-4 shrink-0" />

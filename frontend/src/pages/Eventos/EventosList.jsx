@@ -158,7 +158,7 @@ export default function EventosList() {
   const conteoPorEstado = Object.fromEntries(
     ORDEN_ESTADOS.map((estado) => [estado, eventos.filter((e) => (e.estado ?? 'pendiente') === estado).length]),
   )
-  const clientes = [...new Set(eventos.map((e) => e.clientes?.nombre).filter(Boolean))].sort()
+  const clientes = [...new Set(eventos.map((e) => e.nombre_cliente).filter(Boolean))].sort()
 
   const ahora = new Date()
   const eventosDelMes = eventos.filter((e) => {
@@ -187,10 +187,10 @@ export default function EventosList() {
   const textoBusqueda = busqueda.trim().toLowerCase()
   const eventosFiltrados = eventos.filter((evento) => {
     const coincideEstado = filtroEstado === 'todos' || (evento.estado ?? 'pendiente') === filtroEstado
-    const coincideCliente = filtroCliente === 'todos' || evento.clientes?.nombre === filtroCliente
+    const coincideCliente = filtroCliente === 'todos' || evento.nombre_cliente === filtroCliente
     const coincideBusqueda =
       !textoBusqueda ||
-      evento.clientes?.nombre?.toLowerCase().includes(textoBusqueda) ||
+      evento.nombre_cliente?.toLowerCase().includes(textoBusqueda) ||
       evento.ubicacion?.toLowerCase().includes(textoBusqueda)
     return coincideEstado && coincideCliente && coincideBusqueda
   })
@@ -358,12 +358,12 @@ export default function EventosList() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <span
-                          className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${colorAvatar(evento.clientes?.nombre)}`}
+                          className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${colorAvatar(evento.nombre_cliente)}`}
                         >
-                          {inicialesDe(evento.clientes?.nombre)}
+                          {inicialesDe(evento.nombre_cliente)}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                          <p className="truncate font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                           <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
                         </div>
                       </div>
@@ -408,12 +408,12 @@ export default function EventosList() {
                         <td className="px-2 py-3">
                           <div className="flex items-center gap-3">
                             <span
-                              className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${colorAvatar(evento.clientes?.nombre)}`}
+                              className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${colorAvatar(evento.nombre_cliente)}`}
                             >
-                              {inicialesDe(evento.clientes?.nombre)}
+                              {inicialesDe(evento.nombre_cliente)}
                             </span>
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-white">{evento.clientes?.nombre ?? 'Sin cliente'}</p>
+                              <p className="truncate font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                               <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
                             </div>
                           </div>
@@ -493,7 +493,7 @@ export default function EventosList() {
       <ConfirmarEliminacion
         abierto={Boolean(aEliminar)}
         titulo="Eliminar evento"
-        nombre={aEliminar ? `el evento de ${aEliminar.clientes?.nombre ?? 'sin cliente'}` : ''}
+        nombre={aEliminar ? `el evento de ${aEliminar.nombre_cliente ?? 'sin cliente'}` : ''}
         onCerrar={() => setAEliminar(null)}
         onConfirmar={confirmarEliminar}
         cargando={eliminando}
