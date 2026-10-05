@@ -19,6 +19,7 @@ const vacio = {
   tipo_evento: '',
   fecha: '',
   ciudad: '',
+  barrio: '',
   ubicacion: '',
   precio: '',
   abonado: '',
@@ -65,6 +66,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             tipo_evento: evento.tipo_evento ?? '',
             fecha: evento.fecha ? aInputDatetimeLocal(evento.fecha) : '',
             ciudad: evento.ciudad ?? '',
+            barrio: evento.barrio ?? '',
             ubicacion: evento.ubicacion ?? '',
             precio: evento.precio ?? paqueteActual?.precio ?? '',
             abonado: evento.abonado ?? 0,
@@ -166,6 +168,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
       tipo_evento: form.tipo_evento.trim() || null,
       fecha: new Date(form.fecha).toISOString(),
       ciudad: form.ciudad || null,
+      barrio: form.barrio.trim() || null,
       ubicacion: form.ubicacion || null,
       precio: form.precio !== '' ? Number(form.precio) : null,
       abonado,
@@ -367,6 +370,21 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             </div>
 
             <div>
+              <label htmlFor="barrio" className={estiloLabel}>
+                Barrio <span className="font-normal text-slate-500">(opcional)</span>
+              </label>
+              <input
+                id="barrio"
+                name="barrio"
+                type="text"
+                value={form.barrio}
+                onChange={handleChange}
+                placeholder="Ej. Santa Elena"
+                className={estiloCampo}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <label htmlFor="ubicacion" className={estiloLabel}>
                 Dirección {marcaObligatorio}
               </label>

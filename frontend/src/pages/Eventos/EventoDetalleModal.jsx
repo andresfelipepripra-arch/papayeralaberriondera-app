@@ -129,7 +129,7 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
                 <Dato etiqueta="Ciudad y ubicación">
                   <span className="flex items-start gap-2">
                     <IconoUbicacion className="mt-0.5 size-4 shrink-0 text-slate-500" />
-                    {[evento.ciudad, evento.ubicacion].filter(Boolean).join(' · ') || 'Sin ubicación'}
+                    {[evento.ciudad, evento.barrio, evento.ubicacion].filter(Boolean).join(' · ') || 'Sin ubicación'}
                   </span>
                 </Dato>
                 <Dato etiqueta="Recordatorio">

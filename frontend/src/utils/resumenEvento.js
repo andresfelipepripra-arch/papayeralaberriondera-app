@@ -24,7 +24,7 @@ export function construirResumenEvento(evento, paquete) {
 
   return [
     `${dia.charAt(0).toUpperCase() + dia.slice(1)} ${format(fecha, 'd MMMM', { locale: es })}`,
-    [evento.ciudad, horaCorta(fecha)].filter(Boolean).join(' - '),
+    [evento.barrio, horaCorta(fecha)].filter(Boolean).join(' - '),
     `Dirección: ${evento.ubicacion ?? ''}`,
     `Contacto: ${contacto}`,
     `Tipo de evento: ${evento.tipo_evento ?? ''}`,
