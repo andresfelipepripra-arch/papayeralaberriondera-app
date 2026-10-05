@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatearFechaHora } from '../utils/formatters'
 import { colorAvatar, inicialesDe } from '../utils/avatar'
 import Modal from '../components/ui/Modal'
+import ConfirmarEliminacion from '../components/ui/ConfirmarEliminacion'
 import InputField from '../components/ui/InputField'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import { IconoBasura, IconoEscudo, IconoMas } from '../components/ui/Iconos'
@@ -17,6 +18,8 @@ export default function Usuarios() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [aEliminar, setAEliminar] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
   const { user, rol: rolPropio } = useAuth()
   const esAdmin = rolPropio === 'admin'
 
@@ -72,8 +75,9 @@ export default function Usuarios() {
     }
   }
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Eliminar este usuario?')) return
+  const confirmarEliminar = async () => {
+    const { id } = aEliminar
+    setEliminando(true)
     try {
       await eliminarUsuario(id)
       setUsuarios((prev) => prev.filter((u) => u.id !== id))
@@ -81,6 +85,9 @@ export default function Usuarios() {
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al eliminar el usuario')
+    } finally {
+      setEliminando(false)
+      setAEliminar(null)
     }
   }
 
@@ -220,7 +227,7 @@ export default function Usuarios() {
                 {esAdmin && (
                   <button
                     type="button"
-                    onClick={() => handleEliminar(usuario.id)}
+                    onClick={() => setAEliminar(usuario)}
                     disabled={esTuPropioUsuario}
                     aria-label="Eliminar usuario"
                     className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
@@ -233,6 +240,16 @@ export default function Usuarios() {
           })}
         </div>
       )}
+
+      <ConfirmarEliminacion
+        abierto={Boolean(aEliminar)}
+        titulo="Eliminar usuario"
+        nombre={aEliminar?.email ?? ''}
+        consecuencia="Esta persona perderá el acceso al panel de inmediato."
+        onCerrar={() => setAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        cargando={eliminando}
+      />
     </div>
   )
 }

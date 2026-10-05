@@ -4,6 +4,7 @@ import { eliminarEvento, getEventoPorId } from '../../services/eventosService'
 import { formatearDuracion, formatearFechaHora, formatearPrecio, itemsDeIncluye, precioEfectivo } from '../../utils/formatters'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import Modal from '../../components/ui/Modal'
+import ConfirmarEliminacion from '../../components/ui/ConfirmarEliminacion'
 import EstadoBadge from '../../components/ui/EstadoBadge'
 import {
   IconoBasura,
@@ -49,9 +50,12 @@ function FilaTelefono({ numero, etiqueta }) {
 
 export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEliminado }) {
   const [evento, setEvento] = useState(null)
+  const [pidiendoEliminar, setPidiendoEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
 
   useEffect(() => {
     setEvento(null)
+    setPidiendoEliminar(false)
     if (!eventoId) return
     let cancelado = false
 
@@ -70,8 +74,8 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
     }
   }, [eventoId])
 
-  const handleEliminar = async () => {
-    if (!window.confirm('¿Eliminar este evento?')) return
+  const confirmarEliminar = async () => {
+    setEliminando(true)
     try {
       await eliminarEvento(eventoId)
       toast.success('Evento eliminado')
@@ -79,6 +83,9 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al eliminar el evento')
+    } finally {
+      setEliminando(false)
+      setPidiendoEliminar(false)
     }
   }
 
@@ -93,8 +100,9 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
   const ajustado = evento?.precio != null && paquete && Number(evento.precio) !== Number(paquete.precio)
 
   return (
+    <>
     <Modal
-      abierto={Boolean(eventoId)}
+      abierto={Boolean(eventoId) && !pidiendoEliminar}
       onCerrar={onCerrar}
       titulo={cliente?.nombre ?? 'Evento'}
       subtitulo={evento ? formatearFechaHora(evento.fecha) : undefined}
@@ -274,7 +282,7 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
           <div className="flex flex-wrap justify-end gap-3 border-t border-white/5 pt-5">
             <button
               type="button"
-              onClick={handleEliminar}
+              onClick={() => setPidiendoEliminar(true)}
               className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
             >
               <IconoBasura className="size-4" />
@@ -292,5 +300,15 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
         </div>
       )}
     </Modal>
+
+    <ConfirmarEliminacion
+      abierto={pidiendoEliminar}
+      titulo="Eliminar evento"
+      nombre={evento ? `el evento de ${cliente?.nombre ?? 'sin cliente'} del ${formatearFechaHora(evento.fecha)}` : 'este evento'}
+      onCerrar={() => setPidiendoEliminar(false)}
+      onConfirmar={confirmarEliminar}
+      cargando={eliminando}
+    />
+    </>
   )
 }

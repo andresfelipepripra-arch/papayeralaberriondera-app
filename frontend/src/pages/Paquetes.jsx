@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
 import PaqueteDetalleModal from './PaqueteDetalleModal'
+import ConfirmarEliminacion from '../components/ui/ConfirmarEliminacion'
 import { IconoBasura, IconoCheck, IconoCubo, IconoEstrella, IconoLapiz, IconoMas, IconoOjo } from '../components/ui/Iconos'
 
 const vacio = { nombre: '', descripcion: '', precio: '', duracionHoras: '', duracionMinutos: '', incluye: '' }
@@ -36,6 +37,8 @@ export default function Paquetes() {
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [verDetalleId, setVerDetalleId] = useState(null)
+  const [aEliminar, setAEliminar] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
 
   const cargar = async () => {
     setLoading(true)
@@ -120,8 +123,9 @@ export default function Paquetes() {
     setMostrarFormulario(true)
   }
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Eliminar este paquete?')) return
+  const confirmarEliminar = async () => {
+    const { id } = aEliminar
+    setEliminando(true)
     try {
       await paquetesService.eliminar(id)
       setPaquetes((prev) => prev.filter((p) => p.id !== id))
@@ -129,6 +133,9 @@ export default function Paquetes() {
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al eliminar el paquete')
+    } finally {
+      setEliminando(false)
+      setAEliminar(null)
     }
   }
 
@@ -262,7 +269,7 @@ export default function Paquetes() {
                 )}
 
                 <h3 className="text-lg font-bold text-white">{paquete.nombre}</h3>
-                {paquete.descripcion && <p className="mt-1 text-sm text-slate-400">{paquete.descripcion}</p>}
+                <p className="mt-1 min-h-10 line-clamp-2 text-sm text-slate-400">{paquete.descripcion ?? ''}</p>
 
                 <div className="mt-4 flex items-end gap-2">
                   <span className="text-2xl font-bold text-amber-400">{formatearPrecio(paquete.precio)}</span>
@@ -277,17 +284,22 @@ export default function Paquetes() {
                   <div className="mt-5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Incluye</p>
                     <ul className="mt-2 space-y-1.5">
-                      {itemsDeIncluye(paquete.incluye).map((item, i) => (
+                      {itemsDeIncluye(paquete.incluye).slice(0, 5).map((item, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
                           <IconoCheck className="mt-0.5 size-4 shrink-0 text-emerald-400" />
                           {item}
                         </li>
                       ))}
                     </ul>
+                    {itemsDeIncluye(paquete.incluye).length > 5 && (
+                      <p className="mt-1.5 text-xs text-slate-500">
+                        y {itemsDeIncluye(paquete.incluye).length - 5} más
+                      </p>
+                    )}
                   </div>
                 )}
 
-                <div className="mt-6 flex gap-2 pt-2">
+                <div className="mt-auto flex gap-2 pt-6">
                   <button
                     type="button"
                     onClick={() => setVerDetalleId(paquete.id)}
@@ -306,7 +318,7 @@ export default function Paquetes() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleEliminar(paquete.id)}
+                    onClick={() => setAEliminar(paquete)}
                     aria-label="Eliminar paquete"
                     className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
                   >
@@ -327,6 +339,20 @@ export default function Paquetes() {
           setVerDetalleId(null)
           handleEditar(paquete)
         }}
+      />
+
+      <ConfirmarEliminacion
+        abierto={Boolean(aEliminar)}
+        titulo="Eliminar paquete"
+        nombre={aEliminar?.nombre ?? ''}
+        consecuencia={
+          aEliminar && conteoPorPaquete[aEliminar.id]
+            ? `Sus ${conteoPorPaquete[aEliminar.id]} eventos quedarán sin paquete asignado.`
+            : undefined
+        }
+        onCerrar={() => setAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        cargando={eliminando}
       />
     </div>
   )

@@ -8,10 +8,10 @@ import {
   IconoCubo,
   IconoEscudo,
   IconoLista,
-  IconoNotaMusical,
   IconoSalir,
   IconoUsuarios,
 } from '../ui/Iconos'
+import logo from '../../assets/logo-papayera.png'
 
 const links = [
   { to: '/', label: 'Dashboard', icono: IconoCuadricula },
@@ -38,9 +38,7 @@ export default function Sidebar({ nombre, abierto, onCerrar }) {
         }`}
       >
         <div className="flex items-center gap-3 border-b border-white/5 px-5 py-5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-slate-950">
-            <IconoNotaMusical className="size-5" />
-          </div>
+          <img src={logo} alt="" className="size-10 shrink-0 rounded-full object-cover" />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-white">{nombre}</p>
             <p className="text-xs text-slate-400">Panel de gestión</p>

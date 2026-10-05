@@ -1,8 +1,11 @@
 import 'dotenv/config'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-export const REMITENTE_DEFAULT = process.env.EMAIL_FROM || 'Papayera La Berriondera <onboarding@resend.dev>'
+const transporte = nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+})
+export const REMITENTE_DEFAULT = process.env.EMAIL_FROM || `Papayera La Berriondera <${process.env.GMAIL_USER}>`
 
 function formatearFechaLarga(fecha) {
   return new Date(fecha).toLocaleDateString('es-CO', {
@@ -78,5 +81,5 @@ export function construirSolicitudConfirmacion({ cliente, evento, diasRestantes,
 }
 
 export async function enviarCorreo({ from, to, subject, html }) {
-  return resend.emails.send({ from, to: [to], subject, html })
+  return transporte.sendMail({ from, to, subject, html })
 }

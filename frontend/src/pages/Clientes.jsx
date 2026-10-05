@@ -7,6 +7,7 @@ import { paquetesService } from '../services/paquetesService'
 import { formatearFechaHora, formatearPrecio, precioEfectivo } from '../utils/formatters'
 import { colorAvatar, inicialesDe } from '../utils/avatar'
 import Modal from '../components/ui/Modal'
+import ConfirmarEliminacion from '../components/ui/ConfirmarEliminacion'
 import EstadoBadge from '../components/ui/EstadoBadge'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
@@ -25,6 +26,8 @@ export default function Clientes() {
   const [guardando, setGuardando] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [verEventosId, setVerEventosId] = useState(null)
+  const [aEliminar, setAEliminar] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
   const navigate = useNavigate()
 
   const cargar = async () => {
@@ -104,15 +107,19 @@ export default function Clientes() {
     setMostrarFormulario(true)
   }
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Eliminar este cliente?')) return
+  const confirmarEliminar = async () => {
+    const { id } = aEliminar
+    setEliminando(true)
     try {
       await clientesService.eliminar(id)
-      setClientes((prev) => prev.filter((c) => c.id !== id))
       toast.success('Cliente eliminado')
+      await cargar()
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al eliminar el cliente')
+    } finally {
+      setEliminando(false)
+      setAEliminar(null)
     }
   }
 
@@ -293,7 +300,7 @@ export default function Clientes() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleEliminar(cliente.id)}
+                    onClick={() => setAEliminar(cliente)}
                     aria-label="Eliminar cliente"
                     className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
                   >
@@ -305,6 +312,20 @@ export default function Clientes() {
           })}
         </div>
       )}
+
+      <ConfirmarEliminacion
+        abierto={Boolean(aEliminar)}
+        titulo="Eliminar cliente"
+        nombre={aEliminar?.nombre ?? ''}
+        consecuencia={
+          aEliminar && eventosPorCliente[aEliminar.id]?.length
+            ? `También se eliminarán sus ${eventosPorCliente[aEliminar.id].length} eventos, con sus cobros y datos.`
+            : undefined
+        }
+        onCerrar={() => setAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        cargando={eliminando}
+      />
     </div>
   )
 }

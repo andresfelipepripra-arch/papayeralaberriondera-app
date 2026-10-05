@@ -22,6 +22,7 @@ import { construirResumenEvento } from '../../utils/resumenEvento'
 import { useConfiguracion } from '../../context/ConfiguracionContext'
 import EventoModal from './EventoModal'
 import EventoDetalleModal from './EventoDetalleModal'
+import ConfirmarEliminacion from '../../components/ui/ConfirmarEliminacion'
 
 const POR_PAGINA = 8
 const ALTURA_MENU_ESTADOS = 150
@@ -40,6 +41,8 @@ export default function EventosList() {
   const [editandoId, setEditandoId] = useState(null)
   const [estadoAbierto, setEstadoAbierto] = useState(null)
   const [verDetalleId, setVerDetalleId] = useState(null)
+  const [aEliminar, setAEliminar] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const { configuracion } = useConfiguracion() ?? {}
   const ganancia = Number(configuracion?.ganancia_por_evento ?? 70000)
@@ -130,8 +133,9 @@ export default function EventosList() {
     }
   }
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Eliminar este evento?')) return
+  const confirmarEliminar = async () => {
+    const { id } = aEliminar
+    setEliminando(true)
     try {
       await eliminarEvento(id)
       setEventos((prev) => prev.filter((e) => e.id !== id))
@@ -139,6 +143,9 @@ export default function EventosList() {
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al eliminar el evento')
+    } finally {
+      setEliminando(false)
+      setAEliminar(null)
     }
   }
 
@@ -236,7 +243,7 @@ export default function EventosList() {
       </button>
       <button
         type="button"
-        onClick={() => handleEliminar(evento.id)}
+        onClick={() => setAEliminar(evento)}
         aria-label="Eliminar evento"
         className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
       >
@@ -481,6 +488,15 @@ export default function EventosList() {
           setVerDetalleId(null)
           cargar()
         }}
+      />
+
+      <ConfirmarEliminacion
+        abierto={Boolean(aEliminar)}
+        titulo="Eliminar evento"
+        nombre={aEliminar ? `el evento de ${aEliminar.clientes?.nombre ?? 'sin cliente'}` : ''}
+        onCerrar={() => setAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        cargando={eliminando}
       />
 
       {estadoAbierto &&

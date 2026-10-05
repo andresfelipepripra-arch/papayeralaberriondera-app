@@ -9,10 +9,10 @@ import {
   IconoCandado,
   IconoCorreo,
   IconoFlecha,
-  IconoNotaMusical,
   IconoOjo,
   IconoOjoTachado,
 } from '../components/ui/Iconos'
+import logo from '../assets/logo-papayera.png'
 
 const CLAVE_CORREO_RECORDADO = 'papayera_correo_recordado'
 
@@ -62,9 +62,11 @@ export default function Login() {
           className="absolute inset-x-12 top-0 h-px bg-linear-to-r from-transparent via-amber-500 to-transparent"
         />
 
-        <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-xl border border-white/10 bg-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.25)]">
-          <IconoNotaMusical className="size-8 text-amber-500" />
-        </div>
+        <img
+          src={logo}
+          alt="Papayera La Berriondera"
+          className="mx-auto mb-5 size-20 rounded-full object-cover shadow-[0_0_30px_rgba(245,158,11,0.25)]"
+        />
 
         <h1 className="text-center text-3xl font-bold tracking-tight text-white">Sistema de Gestión</h1>
         <p className="mt-2 text-center text-sm font-semibold text-amber-400">Papayera La Berriondera</p>
