@@ -4,74 +4,182 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 export const REMITENTE_DEFAULT = process.env.EMAIL_FROM || 'Papayera La Berriondera <onboarding@resend.dev>'
 
-function formatearFechaLarga(fecha) {
+const ZONA_HORARIA = 'America/Bogota'
+const LOGO_URL = 'https://papayeralaberriondera-app.vercel.app/logo-papayera.png'
+const ETIQUETAS_ESTADO = { pendiente: 'Pendiente', confirmado: 'Confirmado', realizado: 'Realizado', cancelado: 'Cancelado' }
+
+function escapar(texto) {
+  return String(texto ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function formatearFecha(fecha) {
   return new Date(fecha).toLocaleDateString('es-CO', {
+    timeZone: ZONA_HORARIA,
     weekday: 'long',
-    year: 'numeric',
-    month: 'long',
     day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   })
 }
 
-function plantillaBase({ nombreNegocio, titulo, cuerpo }) {
-  return `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #d97706;">${titulo}</h2>
-      ${cuerpo}
-      <p style="color: #888; font-size: 12px;">Notificación automática de ${nombreNegocio}.</p>
-    </div>
-  `
+function formatearHora(fecha) {
+  return new Date(fecha).toLocaleTimeString('es-CO', { timeZone: ZONA_HORARIA, hour: 'numeric', minute: '2-digit' })
 }
 
-function datosContacto(cliente) {
-  const partes = []
-  if (cliente?.correo) partes.push(`<li><strong>Correo:</strong> ${cliente.correo}</li>`)
-  if (cliente?.telefono) partes.push(`<li><strong>Teléfono:</strong> ${cliente.telefono}</li>`)
-  return partes.join('\n')
+function partesDelDia(fecha) {
+  const dia = new Date(fecha).toLocaleDateString('es-CO', { timeZone: ZONA_HORARIA, day: 'numeric' })
+  const mes = new Date(fecha).toLocaleDateString('es-CO', { timeZone: ZONA_HORARIA, month: 'short' }).replace('.', '')
+  return { dia, mes }
+}
+
+function lugarDelEvento(evento) {
+  return [evento.ciudad, evento.barrio, evento.ubicacion].filter(Boolean).join(' · ') || 'Por confirmar'
+}
+
+function telefonosDelEvento(evento, cliente) {
+  const principal = evento.telefono_contacto ?? cliente?.telefono
+  const nombrePrincipal = evento.nombre_contacto ?? cliente?.nombre
+  const lineas = []
+
+  if (principal) {
+    lineas.push(
+      `<a href="tel:${escapar(principal)}" style="color:#0f172a;text-decoration:none;font-weight:600;">${escapar(principal)}</a>` +
+        (nombrePrincipal ? ` <span style="color:#64748b;">· ${escapar(nombrePrincipal)}</span>` : ''),
+    )
+  }
+  if (evento.telefono_alterno) {
+    lineas.push(
+      `<a href="tel:${escapar(evento.telefono_alterno)}" style="color:#0f172a;text-decoration:none;font-weight:600;">${escapar(evento.telefono_alterno)}</a>` +
+        (evento.nombre_telefono_alterno ? ` <span style="color:#64748b;">· ${escapar(evento.nombre_telefono_alterno)}</span>` : ''),
+    )
+  }
+
+  return lineas.length ? lineas.join('<br>') : 'Sin teléfono registrado'
+}
+
+function filaDato(etiqueta, valorHtml) {
+  return `
+    <tr>
+      <td style="padding:10px 0;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;width:120px;vertical-align:top;">${etiqueta}</td>
+      <td style="padding:10px 0;border-top:1px solid #e2e8f0;color:#0f172a;font-size:14px;vertical-align:top;">${valorHtml}</td>
+    </tr>`
+}
+
+function plantillaCorreo({ nombreNegocio, etiqueta, titulo, pastilla, evento, cliente, filas, boton }) {
+  const { dia, mes } = partesDelDia(evento.fecha)
+  const nombreCliente = escapar(cliente?.nombre ?? 'Cliente sin datos')
+
+  return `
+<!doctype html>
+<html lang="es">
+  <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
+            <tr>
+              <td align="center" style="background:#0f172a;border-radius:16px 16px 0 0;padding:28px 24px;">
+                <img src="${LOGO_URL}" width="84" height="84" alt="${escapar(nombreNegocio)}" style="display:block;margin:0 auto 14px;border-radius:50%;">
+                <div style="color:#f59e0b;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">${etiqueta}</div>
+                <div style="color:#ffffff;font-size:22px;font-weight:700;margin-top:6px;">${titulo}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td width="72" valign="top">
+                      <div style="background:#fef3c7;border-radius:12px;text-align:center;padding:10px 0;">
+                        <div style="color:#b45309;font-size:26px;font-weight:700;line-height:1;">${dia}</div>
+                        <div style="color:#b45309;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:4px;">${mes}</div>
+                      </div>
+                    </td>
+                    <td valign="top" style="padding-left:14px;">
+                      <div style="display:inline-block;background:#f59e0b;color:#0f172a;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;">${pastilla}</div>
+                      <div style="color:#0f172a;font-size:18px;font-weight:700;margin-top:8px;">${nombreCliente}</div>
+                      <div style="color:#64748b;font-size:13px;margin-top:2px;">${escapar(formatearFecha(evento.fecha))} · ${formatearHora(evento.fecha)}</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:20px;">
+                  ${filas}
+                </table>
+
+                ${boton}
+              </td>
+            </tr>
+          </table>
+
+          <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">
+            Notificación interna de ${escapar(nombreNegocio)}. No se envía al cliente.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
+}
+
+function filasDelEvento(evento, cliente) {
+  return [
+    filaDato('Lugar', escapar(lugarDelEvento(evento))),
+    filaDato('Teléfonos', telefonosDelEvento(evento, cliente)),
+    evento.tipo_evento ? filaDato('Tipo', escapar(evento.tipo_evento)) : '',
+    filaDato('Estado', ETIQUETAS_ESTADO[evento.estado ?? 'pendiente'] ?? escapar(evento.estado)),
+  ].join('')
+}
+
+function botonLlamar(cliente, evento) {
+  const telefono = evento.telefono_contacto ?? cliente?.telefono
+  if (!telefono) return ''
+  return `
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:22px;">
+      <tr>
+        <td style="background:#f59e0b;border-radius:10px;">
+          <a href="tel:${escapar(telefono)}" style="display:inline-block;padding:12px 22px;color:#0f172a;font-size:14px;font-weight:700;text-decoration:none;">Llamar al contacto</a>
+        </td>
+      </tr>
+    </table>`
 }
 
 export function construirRecordatorio({ cliente, evento, diasRestantes, nombreNegocio }) {
-  const fecha = formatearFechaLarga(evento.fecha)
   const faltan = diasRestantes === 0 ? 'hoy' : diasRestantes === 1 ? 'mañana' : `en ${diasRestantes} días`
   const nombreCliente = cliente?.nombre ?? 'Cliente sin datos'
 
   const subject = `Recordatorio: evento con ${nombreCliente} es ${faltan}`
-  const html = plantillaBase({
+  const html = plantillaCorreo({
     nombreNegocio,
+    etiqueta: 'Recordatorio',
     titulo: `Tienes un evento ${faltan}`,
-    cuerpo: `
-      <p>Este es un recordatorio interno de <strong>${nombreNegocio}</strong> sobre un evento contratado:</p>
-      <ul>
-        <li><strong>Cliente:</strong> ${nombreCliente}</li>
-        <li><strong>Fecha:</strong> ${fecha}</li>
-        <li><strong>Ubicación:</strong> ${evento.ubicacion ?? 'Por confirmar'}</li>
-        <li><strong>Estado:</strong> ${evento.estado ?? 'pendiente'}</li>
-        ${datosContacto(cliente)}
-      </ul>
-    `,
+    pastilla: diasRestantes === 0 ? 'Hoy' : diasRestantes === 1 ? 'Mañana' : `En ${diasRestantes} días`,
+    evento,
+    cliente,
+    filas: filasDelEvento(evento, cliente),
+    boton: botonLlamar(cliente, evento),
   })
 
   return { subject, html }
 }
 
 export function construirSolicitudConfirmacion({ cliente, evento, diasRestantes, nombreNegocio }) {
-  const fecha = formatearFechaLarga(evento.fecha)
   const faltan = diasRestantes === 0 ? 'es hoy' : diasRestantes === 1 ? 'falta 1 día' : `faltan ${diasRestantes} días`
   const nombreCliente = cliente?.nombre ?? 'Cliente sin datos'
 
   const subject = `Pendiente por confirmar: ${nombreCliente} — ${faltan}`
-  const html = plantillaBase({
+  const html = plantillaCorreo({
     nombreNegocio,
-    titulo: 'Evento pendiente por confirmar',
-    cuerpo: `
-      <p>Este evento sigue en estado <strong>pendiente</strong> y ya se acerca la fecha — contacta al cliente para confirmar:</p>
-      <ul>
-        <li><strong>Cliente:</strong> ${nombreCliente}</li>
-        <li><strong>Fecha:</strong> ${fecha}</li>
-        <li><strong>Ubicación:</strong> ${evento.ubicacion ?? 'Por confirmar'}</li>
-        ${datosContacto(cliente)}
-      </ul>
-    `,
+    etiqueta: 'Confirmación pendiente',
+    titulo: 'Este evento aún no está confirmado',
+    pastilla: 'Pendiente',
+    evento,
+    cliente,
+    filas: filasDelEvento(evento, cliente),
+    boton: botonLlamar(cliente, evento),
   })
 
   return { subject, html }

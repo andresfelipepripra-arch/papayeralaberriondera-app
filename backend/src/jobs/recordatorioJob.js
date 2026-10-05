@@ -24,6 +24,10 @@ export function elegirEscalonRecordatorio(diasRecordatorioDesc, diasRestantes) {
   return null
 }
 
+export function eventoRecordable(evento, ahora) {
+  return evento.estado !== 'realizado' && evento.estado !== 'cancelado' && new Date(evento.fecha) >= ahora
+}
+
 export function debeSolicitarConfirmacion(estado, diasRestantes, diasConfirmacion) {
   return (estado ?? 'pendiente') === 'pendiente' && diasRestantes >= 0 && diasRestantes <= diasConfirmacion
 }
@@ -65,6 +69,7 @@ export async function ejecutarRecordatorios() {
 
   for (const evento of eventos) {
     const cliente = evento.clientes
+    if (!eventoRecordable(evento, ahora)) continue
 
     const diasRestantes = diasRestantesDesde(evento.fecha, ahora)
     if (diasRestantes < 0) continue
