@@ -18,15 +18,18 @@ export function construirResumenEvento(evento, paquete) {
   const falta = Math.max(total - abonado, 0)
 
   const dia = format(fecha, 'EEEE', { locale: es })
-  const contacto = [evento.telefono_contacto ?? evento.clientes?.telefono, evento.nombre_contacto ?? evento.clientes?.nombre]
-    .filter(Boolean)
-    .join(' - ')
+  const lineasContacto = [
+    [evento.telefono_contacto ?? evento.clientes?.telefono, evento.nombre_contacto ?? evento.clientes?.nombre]
+      .filter(Boolean)
+      .join(' - '),
+    [evento.telefono_alterno, evento.nombre_telefono_alterno].filter(Boolean).join(' - '),
+  ].filter(Boolean)
 
   return [
     `${dia.charAt(0).toUpperCase() + dia.slice(1)} ${format(fecha, 'd MMMM', { locale: es })}`,
     [evento.barrio, horaCorta(fecha)].filter(Boolean).join(' - '),
     `Dirección: ${evento.ubicacion ?? ''}`,
-    `Contacto: ${contacto}`,
+    ...(lineasContacto.length ? lineasContacto.map((linea, i) => (i === 0 ? `Contacto: ${linea}` : linea)) : ['Contacto:']),
     `Tipo de evento: ${evento.tipo_evento ?? ''}`,
     `Formato: ${paquete?.nombre ?? evento.paquetes?.nombre ?? ''}`,
     `Cobrar: ${enMil(falta)}, total ${enMil(total)}, ${abonado > 0 ? `ya abono ${enMil(abonado)} mil` : 'ya abono 0'}`,
