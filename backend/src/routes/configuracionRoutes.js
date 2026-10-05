@@ -164,8 +164,8 @@ router.get('/vista-previa', requiereAdmin, async (req, res) => {
       tipo === 'confirmacion' ? eventos.find((e) => (e.estado ?? 'pendiente') === 'pendiente') : eventos[0]
 
     const cliente = eventoReal
-      ? { nombre: eventoReal.nombre_cliente, correo: eventoReal.correo_cliente, telefono: eventoReal.telefono_contacto }
-      : { nombre: 'Nombre del cliente', correo: 'cliente@correo.com', telefono: '300 000 0000' }
+      ? { nombre: eventoReal.nombre_cliente, telefono: eventoReal.telefono_contacto }
+      : { nombre: 'Nombre del cliente', telefono: '300 000 0000' }
     const evento = eventoReal ?? {
       fecha: new Date(Date.now() + 7 * 86400000).toISOString(),
       ubicacion: 'Ubicación del evento',

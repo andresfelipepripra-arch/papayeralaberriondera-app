@@ -68,7 +68,7 @@ export async function ejecutarRecordatorios() {
   const contadores = { enviados: 0, fallidos: 0 }
 
   for (const evento of eventos) {
-    const cliente = { nombre: evento.nombre_cliente, correo: evento.correo_cliente, telefono: evento.telefono_contacto }
+    const cliente = { nombre: evento.nombre_cliente, telefono: evento.telefono_contacto }
     if (!eventoRecordable(evento, ahora)) continue
 
     const diasRestantes = diasRestantesDesde(evento.fecha, ahora)

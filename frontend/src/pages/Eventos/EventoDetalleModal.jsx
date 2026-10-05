@@ -11,7 +11,6 @@ import {
   IconoCalendario,
   IconoCampana,
   IconoCheck,
-  IconoCorreo,
   IconoCubo,
   IconoLapiz,
   IconoNota,
@@ -89,7 +88,7 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
     }
   }
 
-  const cliente = evento ? { nombre: evento.nombre_cliente, correo: evento.correo_cliente } : undefined
+  const cliente = evento ? { nombre: evento.nombre_cliente } : undefined
   const paquete = evento?.paquetes
   const items = itemsDeIncluye(paquete?.incluye)
   const telefono = evento?.telefono_contacto
@@ -181,17 +180,6 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
                       <FilaTelefono numero={evento.telefono_alterno} etiqueta={evento.nombre_telefono_alterno} />
                     )}
 
-                    {cliente.correo ? (
-                      <a href={`mailto:${cliente.correo}`} className="flex items-center gap-2 text-slate-300 transition hover:text-amber-400">
-                        <IconoCorreo className="size-4 shrink-0 text-slate-500" />
-                        {cliente.correo}
-                      </a>
-                    ) : (
-                      <p className="flex items-center gap-2 text-slate-500">
-                        <IconoCorreo className="size-4 shrink-0" />
-                        Sin correo
-                      </p>
-                    )}
                   </div>
                 </div>
               ) : (

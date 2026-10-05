@@ -17,7 +17,6 @@ const PASOS = [
 
 const vacio = {
   nombre_cliente: '',
-  correo_cliente: '',
   telefono_contacto: '',
   nombre_contacto: '',
   nombre_telefono_alterno: '',
@@ -87,7 +86,6 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
           const paqueteActual = paquetesData.find((p) => p.id === evento.paquete_id)
           setForm({
             nombre_cliente: evento.nombre_cliente ?? '',
-            correo_cliente: evento.correo_cliente ?? '',
             telefono_contacto: evento.telefono_contacto ?? '',
             nombre_contacto: evento.nombre_contacto ?? '',
             nombre_telefono_alterno: evento.nombre_telefono_alterno ?? '',
@@ -157,7 +155,6 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
 
     const payload = {
       nombre_cliente: form.nombre_cliente.trim(),
-      correo_cliente: form.correo_cliente.trim() || null,
       telefono_contacto: form.telefono_contacto || null,
       nombre_contacto: form.nombre_contacto.trim() || null,
       nombre_telefono_alterno: form.nombre_telefono_alterno.trim() || null,
@@ -280,13 +277,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
                 </div>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="correo_cliente" className={estiloLabel}>
-                    Correo <span className="font-normal text-slate-500">(opcional)</span>
-                  </label>
-                  <input id="correo_cliente" name="correo_cliente" type="email" value={form.correo_cliente} onChange={handleChange} className={estiloCampo} />
-                </div>
+              <div>
                 <div>
                   <label htmlFor="nombre_contacto" className={estiloLabel}>
                     Persona de contacto <span className="font-normal text-slate-500">(opcional)</span>
@@ -452,7 +443,6 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
               <TarjetaResumen titulo="Cliente">
                 <p className="font-semibold text-white">{form.nombre_cliente}</p>
                 {form.telefono_contacto && <p>{form.telefono_contacto}</p>}
-                {form.correo_cliente && <p>{form.correo_cliente}</p>}
                 {form.nombre_contacto && <p className="text-slate-400">Contacto: {form.nombre_contacto}</p>}
                 {form.telefono_alterno && (
                   <p>
