@@ -377,6 +377,10 @@ export default function EventosList() {
                       <span className="font-semibold text-white">{formatearPrecio(precioEfectivo(evento, paquete))}</span>
                     </div>
 
+                    {evento.notas && (
+                      <p className="whitespace-pre-line rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-100">{evento.notas}</p>
+                    )}
+
                     <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-3">
                       <span className="min-w-0 truncate text-xs text-slate-400">
                         {paquete?.nombre ?? evento.paquetes?.nombre ?? 'Sin paquete'}
@@ -415,6 +419,7 @@ export default function EventosList() {
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                               <p className="truncate text-xs text-slate-400">{evento.ubicacion ?? 'Sin ubicación'}</p>
+                              {evento.notas && <p className="mt-1 max-w-md whitespace-pre-line text-xs text-amber-100">{evento.notas}</p>}
                             </div>
                           </div>
                         </td>
