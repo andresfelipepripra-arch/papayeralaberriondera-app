@@ -25,6 +25,7 @@ import {
   formatearMesCorto,
   formatearPrecio,
   formatearPrecioCorto,
+  gananciaDeEvento,
   precioEfectivo,
 } from '../utils/formatters'
 import { ESTADOS, ORDEN_ESTADOS } from '../utils/estados'
@@ -44,7 +45,6 @@ import {
   IconoReloj,
 } from '../components/ui/Iconos'
 
-const GANANCIA_POR_DEFECTO = 70000
 
 const PALETA_DONUT = [
   { trazo: 'stroke-amber-500', punto: 'bg-amber-500' },
@@ -121,7 +121,6 @@ export default function Dashboard() {
   if (loading) return <p className="text-slate-400">Cargando resumen...</p>
   if (error) return <p className="text-red-400">{error}</p>
 
-  const ganancia = Number(configuracion?.ganancia_por_evento ?? GANANCIA_POR_DEFECTO)
   const ahora = new Date()
   const paquetesPorId = Object.fromEntries(paquetes.map((p) => [p.id, p]))
   const precioDe = (evento) => precioEfectivo(evento, paquetesPorId[evento.paquete_id])
@@ -176,8 +175,8 @@ export default function Dashboard() {
   const cancelados = eventosFiltrados.filter((e) => estadoDe(e) === 'cancelado').length
   const pendientes = eventosFiltrados.filter((e) => estadoDe(e) === 'pendiente').length
 
-  const gananciaPapayera = realizados.length * ganancia
-  const gananciaProyectada = porRealizar.length * ganancia
+  const gananciaPapayera = realizados.reduce((suma, e) => suma + gananciaDeEvento(e, configuracion), 0)
+  const gananciaProyectada = porRealizar.reduce((suma, e) => suma + gananciaDeEvento(e, configuracion), 0)
   const valorTotal = noCancelados.reduce((suma, e) => suma + precioDe(e), 0)
   const cobrado = noCancelados.reduce((suma, e) => suma + (Number(e.abonado) || 0), 0)
   const faltaPorCobrar = noCancelados.reduce(
@@ -187,7 +186,7 @@ export default function Dashboard() {
   const porcentajeCobrado = valorTotal > 0 ? Math.round((cobrado / valorTotal) * 100) : 0
 
   const metricaEvento = (evento) => {
-    if (modoVista === 'ganancia') return estadoDe(evento) === 'realizado' ? ganancia : 0
+    if (modoVista === 'ganancia') return estadoDe(evento) === 'realizado' ? gananciaDeEvento(evento, configuracion) : 0
     return estadoDe(evento) === 'cancelado' ? 0 : precioDe(evento)
   }
 
@@ -217,7 +216,7 @@ export default function Dashboard() {
           {
             titulo: 'Ganancia papayera',
             valor: formatearPrecio(gananciaPapayera),
-            detalle: `${realizados.length} ${realizados.length === 1 ? 'evento realizado' : 'eventos realizados'} × ${formatearPrecio(ganancia)}`,
+            detalle: `${realizados.length} ${realizados.length === 1 ? 'evento realizado' : 'eventos realizados'}`,
             icono: IconoDinero,
             destacada: true,
           },

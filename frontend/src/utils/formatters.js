@@ -84,3 +84,10 @@ export function formatearDuracion(horas) {
   const textoHoras = `${h} ${h === 1 ? 'hora' : 'horas'}`
   return min === 0 ? textoHoras : `${textoHoras} ${min} min`
 }
+
+// La ganancia es propia de cada evento; si no tiene una, se usa la general de configuración.
+export function gananciaDeEvento(evento, configuracion) {
+  const valor = evento.ganancia_evento ?? configuracion?.ganancia_por_evento ?? 70000
+  const numero = Number(valor)
+  return Number.isFinite(numero) ? numero : 0
+}

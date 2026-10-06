@@ -111,7 +111,7 @@ export default function Configuracion() {
 
           <Panel
             titulo="Ganancia por evento"
-            subtitulo="Monto fijo que se queda la papayera en cada evento realizado, sin importar el valor final."
+            subtitulo="Ganancia por defecto de la papayera en cada evento. Cada evento puede tener su propio valor al crearlo o editarlo."
           >
             <div className="max-w-sm">
               <label htmlFor="ganancia_por_evento" className={estiloLabel}>

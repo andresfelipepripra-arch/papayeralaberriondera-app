@@ -7,6 +7,7 @@ import { ESTADOS, ORDEN_ESTADOS } from '../../utils/estados'
 import Modal from '../../components/ui/Modal'
 import BotonPrimario from '../../components/ui/BotonPrimario'
 import { IconoCalendario, IconoCheck, IconoX } from '../../components/ui/Iconos'
+import { useConfiguracion } from '../../context/ConfiguracionContext'
 
 const PASOS = [
   { etiqueta: 'Cliente', titulo: '¿Quién es el cliente?', subtitulo: 'Datos de la persona que contrata el evento.' },
@@ -25,6 +26,7 @@ const vacio = {
   tipo_evento: '',
   precio: '',
   abonado: '',
+  ganancia_evento: '',
   fecha: '',
   ciudad: '',
   barrio: '',
@@ -46,6 +48,7 @@ function errorDelPaso(paso, form) {
     const abonado = Number(form.abonado) || 0
     if (abonado < 0) return 'El abonado no puede ser negativo'
     if (abonado > total) return 'El abonado no puede ser mayor al total a cobrar'
+    if (form.ganancia_evento !== '' && Number(form.ganancia_evento) < 0) return 'La ganancia no puede ser negativa'
   }
 
   if (paso === 3) {
@@ -59,6 +62,7 @@ function errorDelPaso(paso, form) {
 
 export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado }) {
   const esEdicion = Boolean(eventoId)
+  const { configuracion } = useConfiguracion() ?? {}
 
   const [paquetes, setPaquetes] = useState([])
   const [form, setForm] = useState(vacio)
@@ -94,6 +98,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             tipo_evento: evento.tipo_evento ?? '',
             precio: evento.precio ?? paqueteActual?.precio ?? '',
             abonado: evento.abonado ?? 0,
+            ganancia_evento: String(evento.ganancia_evento ?? configuracion?.ganancia_por_evento ?? 70000),
             fecha: evento.fecha ? aInputDatetimeLocal(evento.fecha) : '',
             ciudad: evento.ciudad ?? '',
             barrio: evento.barrio ?? '',
@@ -102,7 +107,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             notas: evento.notas ?? '',
           })
         } else {
-          setForm(vacio)
+          setForm({ ...vacio, ganancia_evento: String(configuracion?.ganancia_por_evento ?? 70000) })
         }
       } catch (err) {
         console.error(err)
@@ -163,6 +168,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
       tipo_evento: form.tipo_evento.trim() || null,
       precio: form.precio !== '' ? Number(form.precio) : null,
       abonado: Number(form.abonado) || 0,
+      ganancia_evento: form.ganancia_evento !== '' ? Number(form.ganancia_evento) : null,
       fecha: new Date(form.fecha).toISOString(),
       ciudad: form.ciudad.trim(),
       barrio: form.barrio.trim() || null,
@@ -278,20 +284,18 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
               </div>
 
               <div>
-                <div>
-                  <label htmlFor="nombre_contacto" className={estiloLabel}>
-                    Persona de contacto <span className="font-normal text-slate-500">(opcional)</span>
-                  </label>
-                  <input
-                    id="nombre_contacto"
-                    name="nombre_contacto"
-                    type="text"
-                    value={form.nombre_contacto}
-                    onChange={handleChange}
-                    placeholder="Útil si es una empresa"
-                    className={estiloCampo}
-                  />
-                </div>
+                <label htmlFor="nombre_contacto" className={estiloLabel}>
+                  Persona de contacto <span className="font-normal text-slate-500">(opcional)</span>
+                </label>
+                <input
+                  id="nombre_contacto"
+                  name="nombre_contacto"
+                  type="text"
+                  value={form.nombre_contacto}
+                  onChange={handleChange}
+                  placeholder="Útil si es una empresa"
+                  className={estiloCampo}
+                />
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -344,7 +348,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
                 </div>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-3">
                 <div>
                   <label htmlFor="precio" className={estiloLabel}>
                     Total a cobrar
@@ -357,6 +361,13 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
                     Abonado
                   </label>
                   <input id="abonado" name="abonado" type="number" step="1000" min="0" placeholder="0" value={form.abonado} onChange={handleChange} className={estiloCampo} />
+                </div>
+                <div>
+                  <label htmlFor="ganancia_evento" className={estiloLabel}>
+                    Ganancia por toque
+                  </label>
+                  <input id="ganancia_evento" name="ganancia_evento" type="number" step="1000" min="0" placeholder="70000" value={form.ganancia_evento} onChange={handleChange} className={estiloCampo} />
+                  <p className="mt-1 text-xs text-slate-400">Lo que se queda la papayera en este evento.</p>
                 </div>
               </div>
 
@@ -455,6 +466,9 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
               <TarjetaResumen titulo="Paquete y cobro">
                 <p className="font-semibold text-white">{paqueteSeleccionado?.nombre ?? 'Sin paquete'}</p>
                 {form.tipo_evento && <p className="text-slate-400">{form.tipo_evento}</p>}
+                <p>
+                  Ganancia papayera <span className="font-semibold text-white">{formatearPrecio(Number(form.ganancia_evento) || 0)}</span>
+                </p>
                 <p>
                   Total <span className="font-semibold text-white">{formatearPrecio(total)}</span> · Abonado{' '}
                   <span className="font-semibold text-white">{formatearPrecio(abonado)}</span>

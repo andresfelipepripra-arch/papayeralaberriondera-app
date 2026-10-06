@@ -7,6 +7,7 @@ import { paquetesService } from '../../services/paquetesService'
 import {
   formatearDia,
   formatearDuracion,
+  gananciaDeEvento,
   formatearHora,
   formatearMesCorto,
   formatearPrecio,
@@ -45,7 +46,6 @@ export default function EventosList() {
   const [eliminando, setEliminando] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const { configuracion } = useConfiguracion() ?? {}
-  const ganancia = Number(configuracion?.ganancia_por_evento ?? 70000)
 
   const cargar = async () => {
     try {
@@ -176,7 +176,7 @@ export default function EventosList() {
   })
   const realizadosMes = delMes.filter((e) => e.estado === 'realizado')
   const noCanceladosMes = delMes.filter((e) => (e.estado ?? 'pendiente') !== 'cancelado')
-  const gananciaMes = realizadosMes.length * ganancia
+  const gananciaMes = realizadosMes.reduce((suma, e) => suma + gananciaDeEvento(e, configuracion), 0)
   const valorMes = noCanceladosMes.reduce((suma, e) => suma + precioEfectivo(e, paqueteDe(e)), 0)
   const cobradoMes = noCanceladosMes.reduce((suma, e) => suma + (Number(e.abonado) || 0), 0)
   const faltaMes = noCanceladosMes.reduce(
@@ -274,7 +274,7 @@ export default function EventosList() {
         <TarjetaEstadistica
           titulo="Ganancia papayera · este mes"
           valor={formatearPrecio(gananciaMes)}
-          detalle={`${realizadosMes.length} ${realizadosMes.length === 1 ? 'realizado' : 'realizados'} × ${formatearPrecio(ganancia)}`}
+          detalle={`${realizadosMes.length} ${realizadosMes.length === 1 ? 'realizado' : 'realizados'}`}
           icono={IconoDinero}
           destacada
         />
