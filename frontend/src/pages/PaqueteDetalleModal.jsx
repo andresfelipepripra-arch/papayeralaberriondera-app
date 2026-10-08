@@ -1,4 +1,5 @@
 import { formatearDuracion, formatearFechaHora, formatearPrecio, itemsDeIncluye, precioEfectivo } from '../utils/formatters'
+import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
 import EstadoBadge from '../components/ui/EstadoBadge'
 import { IconoCheck, IconoCubo } from '../components/ui/Iconos'
@@ -24,6 +25,7 @@ function Dato({ etiqueta, children }) {
 }
 
 export default function PaqueteDetalleModal({ paquete, eventos, onCerrar, onEditar }) {
+  const { rol } = useAuth()
   const eventosDelPaquete = paquete
     ? eventos
         .filter((e) => e.paquete_id === paquete.id)
@@ -119,15 +121,17 @@ export default function PaqueteDetalleModal({ paquete, eventos, onCerrar, onEdit
             )}
           </Bloque>
 
-          <div className="flex justify-end border-t border-white/5 pt-5">
-            <button
-              type="button"
-              onClick={() => onEditar(paquete)}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
-            >
-              Editar paquete
-            </button>
-          </div>
+          {rol === 'admin' && (
+            <div className="flex justify-end border-t border-white/5 pt-5">
+              <button
+                type="button"
+                onClick={() => onEditar(paquete)}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+              >
+                Editar paquete
+              </button>
+            </div>
+          )}
         </div>
       )}
     </Modal>

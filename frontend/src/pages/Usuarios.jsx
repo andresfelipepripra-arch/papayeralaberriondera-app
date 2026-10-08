@@ -1,16 +1,51 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { cambiarRolUsuario, crearUsuario, eliminarUsuario, getUsuarios } from '../services/usuariosService'
+import {
+  actualizarModulosUsuario,
+  cambiarRolUsuario,
+  crearUsuario,
+  eliminarUsuario,
+  getUsuarios,
+} from '../services/usuariosService'
 import { useAuth } from '../context/AuthContext'
 import { formatearFechaHora } from '../utils/formatters'
 import { colorAvatar, inicialesDe } from '../utils/avatar'
+import { MODULOS_DISPONIBLES, TODOS_LOS_MODULOS } from '../utils/modulos'
 import Modal from '../components/ui/Modal'
 import ConfirmarEliminacion from '../components/ui/ConfirmarEliminacion'
 import InputField from '../components/ui/InputField'
 import BotonPrimario from '../components/ui/BotonPrimario'
-import { IconoBasura, IconoEscudo, IconoMas } from '../components/ui/Iconos'
+import { IconoBasura, IconoCuadricula, IconoEscudo, IconoMas } from '../components/ui/Iconos'
 
-const vacio = { email: '', password: '', rol: 'operador' }
+const vacio = { email: '', password: '', rol: 'musico', modulos: TODOS_LOS_MODULOS }
+
+function alternarModulo(modulos, clave) {
+  return modulos.includes(clave) ? modulos.filter((m) => m !== clave) : [...modulos, clave]
+}
+
+function SelectorModulos({ modulos, onCambiar }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {MODULOS_DISPONIBLES.map(({ clave, etiqueta }) => {
+        const activo = modulos.includes(clave)
+        return (
+          <button
+            key={clave}
+            type="button"
+            onClick={() => onCambiar(alternarModulo(modulos, clave))}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+              activo
+                ? 'bg-amber-500 text-slate-950'
+                : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
+            }`}
+          >
+            {etiqueta}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([])
@@ -20,6 +55,8 @@ export default function Usuarios() {
   const [guardando, setGuardando] = useState(false)
   const [aEliminar, setAEliminar] = useState(null)
   const [eliminando, setEliminando] = useState(false)
+  const [editandoModulos, setEditandoModulos] = useState(null)
+  const [guardandoModulos, setGuardandoModulos] = useState(false)
   const { user, rol: rolPropio } = useAuth()
   const esAdmin = rolPropio === 'admin'
 
@@ -50,7 +87,12 @@ export default function Usuarios() {
 
     setGuardando(true)
     try {
-      await crearUsuario(form)
+      await crearUsuario({
+        email: form.email,
+        password: form.password,
+        rol: form.rol,
+        modulos: form.rol === 'admin' ? TODOS_LOS_MODULOS : form.modulos,
+      })
       toast.success(`Usuario creado: ${form.email}`)
       setForm(vacio)
       setMostrarFormulario(false)
@@ -72,6 +114,21 @@ export default function Usuarios() {
     } catch (err) {
       console.error(err)
       toast.error(err.response?.data?.error || 'Error al cambiar el rol')
+    }
+  }
+
+  const guardarModulos = async () => {
+    setGuardandoModulos(true)
+    try {
+      await actualizarModulosUsuario(editandoModulos.id, editandoModulos.modulos)
+      setUsuarios((prev) => prev.map((u) => (u.id === editandoModulos.id ? { ...u, modulos: editandoModulos.modulos } : u)))
+      toast.success('Módulos actualizados')
+      setEditandoModulos(null)
+    } catch (err) {
+      console.error(err)
+      toast.error(err.response?.data?.error || 'Error al actualizar los módulos')
+    } finally {
+      setGuardandoModulos(false)
     }
   }
 
@@ -147,22 +204,34 @@ export default function Usuarios() {
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-100">Rol</label>
               <div className="flex gap-2">
-                {['operador', 'admin'].map((opcion) => (
+                {[
+                  { valor: 'musico', etiqueta: 'Músico' },
+                  { valor: 'admin', etiqueta: 'Administrador' },
+                ].map(({ valor, etiqueta }) => (
                   <button
-                    key={opcion}
+                    key={valor}
                     type="button"
-                    onClick={() => setForm({ ...form, rol: opcion })}
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
-                      form.rol === opcion
+                    onClick={() => setForm({ ...form, rol: valor })}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      form.rol === valor
                         ? 'bg-amber-500 text-slate-950'
                         : 'bg-slate-800/60 text-slate-300 ring-1 ring-white/10 hover:bg-white/5'
                     }`}
                   >
-                    {opcion}
+                    {etiqueta}
                   </button>
                 ))}
               </div>
             </div>
+
+            {form.rol === 'admin' ? (
+              <p className="text-xs text-slate-400">Un administrador ve todos los módulos del sistema.</p>
+            ) : (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-100">Módulos que puede ver</label>
+                <SelectorModulos modulos={form.modulos} onCambiar={(modulos) => setForm({ ...form, modulos })} />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <BotonPrimario type="submit" disabled={guardando}>
@@ -204,23 +273,34 @@ export default function Usuarios() {
                   <p className="text-xs text-slate-400">Creado {formatearFechaHora(usuario.created_at)}</p>
                 </div>
 
+                {usuario.rol !== 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => setEditandoModulos(usuario)}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
+                  >
+                    <IconoCuadricula className="size-3.5" />
+                    Módulos ({usuario.modulos?.length ?? 0}/{TODOS_LOS_MODULOS.length})
+                  </button>
+                )}
+
                 {esAdmin && !esTuPropioUsuario ? (
                   <select
                     value={usuario.rol}
                     onChange={(e) => handleCambiarRol(usuario, e.target.value)}
-                    className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold capitalize text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    className="rounded-lg border border-white/5 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-100 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   >
-                    <option value="operador">Operador</option>
-                    <option value="admin">Admin</option>
+                    <option value="musico">Músico</option>
+                    <option value="admin">Administrador</option>
                   </select>
                 ) : (
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                       usuario.rol === 'admin' ? 'bg-amber-500/15 text-amber-400' : 'bg-slate-500/15 text-slate-300'
                     }`}
                   >
                     <IconoEscudo className="size-3.5" />
-                    {usuario.rol}
+                    {usuario.rol === 'admin' ? 'Administrador' : 'Músico'}
                   </span>
                 )}
 
@@ -240,6 +320,35 @@ export default function Usuarios() {
           })}
         </div>
       )}
+
+      <Modal
+        abierto={Boolean(editandoModulos)}
+        onCerrar={() => setEditandoModulos(null)}
+        titulo="Módulos del usuario"
+        subtitulo={editandoModulos?.email}
+        icono={IconoCuadricula}
+      >
+        {editandoModulos && (
+          <div className="space-y-6">
+            <SelectorModulos
+              modulos={editandoModulos.modulos ?? []}
+              onCambiar={(modulos) => setEditandoModulos({ ...editandoModulos, modulos })}
+            />
+            <div className="flex gap-3 pt-2">
+              <BotonPrimario type="button" onClick={guardarModulos} disabled={guardandoModulos}>
+                {guardandoModulos ? 'Guardando...' : 'Guardar'}
+              </BotonPrimario>
+              <button
+                type="button"
+                onClick={() => setEditandoModulos(null)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <ConfirmarEliminacion
         abierto={Boolean(aEliminar)}

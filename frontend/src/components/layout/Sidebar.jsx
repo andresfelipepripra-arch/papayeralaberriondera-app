@@ -13,17 +13,17 @@ import {
 import logo from '../../assets/logo-papayera.png'
 
 const links = [
-  { to: '/', label: 'Dashboard', icono: IconoCuadricula },
-  { to: '/calendario', label: 'Calendario', icono: IconoCalendario },
-  { to: '/eventos', label: 'Eventos', icono: IconoLista },
-  { to: '/paquetes', label: 'Paquetes', icono: IconoCubo },
+  { to: '/', label: 'Dashboard', icono: IconoCuadricula, soloAdmin: true },
+  { to: '/calendario', label: 'Calendario', icono: IconoCalendario, modulo: 'calendario' },
+  { to: '/eventos', label: 'Eventos', icono: IconoLista, modulo: 'eventos' },
+  { to: '/paquetes', label: 'Paquetes', icono: IconoCubo, modulo: 'paquetes' },
   { to: '/usuarios', label: 'Usuarios', icono: IconoEscudo, soloAdmin: true },
   { to: '/recordatorios', label: 'Recordatorios', icono: IconoCampana, soloAdmin: true },
   { to: '/configuracion', label: 'Configuración', icono: IconoAjustes, soloAdmin: true },
 ]
 
 export default function Sidebar({ nombre, abierto, onCerrar }) {
-  const { user, rol, signOut } = useAuth()
+  const { user, rol, modulos, signOut } = useAuth()
   const email = user?.email ?? ''
 
   return (
@@ -45,7 +45,10 @@ export default function Sidebar({ nombre, abierto, onCerrar }) {
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {links
-            .filter((link) => !link.soloAdmin || rol === 'admin')
+            .filter((link) => {
+              if (link.soloAdmin) return rol === 'admin'
+              return rol === 'admin' || modulos?.includes(link.modulo)
+            })
             .map(({ to, label, icono: Icono }) => (
               <NavLink
                 key={to}
@@ -73,7 +76,7 @@ export default function Sidebar({ nombre, abierto, onCerrar }) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">
-                {rol === 'admin' ? 'Administrador' : 'Operador'}
+                {rol === 'admin' ? 'Administrador' : 'Músico'}
               </p>
               <p className="truncate text-xs text-slate-400">{email}</p>
             </div>

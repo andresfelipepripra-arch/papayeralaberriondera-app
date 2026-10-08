@@ -21,7 +21,7 @@ export async function verificarAuth(req, res, next) {
       .eq('id', data.user.id)
       .single()
 
-    req.usuario = { ...data.user, rol: perfil?.rol ?? 'operador' }
+    req.usuario = { ...data.user, rol: perfil?.rol ?? 'musico' }
     next()
   } catch (error) {
     return res.status(401).json({ error: 'No autorizado' })

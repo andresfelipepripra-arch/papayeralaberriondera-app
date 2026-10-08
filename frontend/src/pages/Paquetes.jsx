@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { paquetesService } from '../services/paquetesService'
+import { useAuth } from '../context/AuthContext'
 import { getEventos } from '../services/eventosService'
 import { formatearDuracion, formatearPrecio, itemsDeIncluye } from '../utils/formatters'
 import Modal from '../components/ui/Modal'
@@ -29,6 +30,8 @@ function decimalADuracion(duracionHorasDecimal) {
 }
 
 export default function Paquetes() {
+  const { rol } = useAuth()
+  const esAdmin = rol === 'admin'
   const [paquetes, setPaquetes] = useState([])
   const [eventos, setEventos] = useState([])
   const [form, setForm] = useState(vacio)
@@ -150,10 +153,12 @@ export default function Paquetes() {
             {paquetes.length} {paquetes.length === 1 ? 'paquete disponible' : 'paquetes disponibles'}
           </p>
         </div>
-        <BotonPrimario onClick={abrirCreacion}>
-          <IconoMas className="size-4" />
-          Nuevo paquete
-        </BotonPrimario>
+        {esAdmin && (
+          <BotonPrimario onClick={abrirCreacion}>
+            <IconoMas className="size-4" />
+            Nuevo paquete
+          </BotonPrimario>
+        )}
       </div>
 
       <Modal
@@ -308,22 +313,26 @@ export default function Paquetes() {
                     <IconoOjo className="size-4" />
                     Ver detalle
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleEditar(paquete)}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
-                  >
-                    <IconoLapiz className="size-4" />
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAEliminar(paquete)}
-                    aria-label="Eliminar paquete"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
-                  >
-                    <IconoBasura className="size-4" />
-                  </button>
+                  {esAdmin && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleEditar(paquete)}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-white/5"
+                      >
+                        <IconoLapiz className="size-4" />
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAEliminar(paquete)}
+                        aria-label="Eliminar paquete"
+                        className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <IconoBasura className="size-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )

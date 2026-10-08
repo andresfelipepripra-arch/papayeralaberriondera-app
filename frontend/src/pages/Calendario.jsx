@@ -18,7 +18,6 @@ import { formatearHora } from '../utils/formatters'
 import { ESTADOS, ORDEN_ESTADOS } from '../utils/estados'
 import Panel from '../components/ui/Panel'
 import { IconoChevron } from '../components/ui/Iconos'
-import EventoModal from './Eventos/EventoModal'
 import EventoDetalleModal from './Eventos/EventoDetalleModal'
 
 const DIAS_SEMANA = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
@@ -32,8 +31,6 @@ export default function Calendario() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [mesActual, setMesActual] = useState(() => startOfMonth(new Date()))
   const [verDetalleId, setVerDetalleId] = useState(null)
-  const [editandoId, setEditandoId] = useState(null)
-  const [modalAbierto, setModalAbierto] = useState(false)
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => new Date())
 
   const cargar = async () => {
@@ -51,17 +48,6 @@ export default function Calendario() {
   useEffect(() => {
     cargar()
   }, [])
-
-  const abrirEdicion = (id) => {
-    setEditandoId(id)
-    setModalAbierto(true)
-  }
-
-  const alGuardar = () => {
-    setModalAbierto(false)
-    setEditandoId(null)
-    cargar()
-  }
 
   const conteoPorEstado = useMemo(
     () =>
@@ -239,24 +225,10 @@ export default function Calendario() {
       <EventoDetalleModal
         eventoId={verDetalleId}
         onCerrar={() => setVerDetalleId(null)}
-        onEditar={(id) => {
-          setVerDetalleId(null)
-          abrirEdicion(id)
-        }}
         onEliminado={() => {
           setVerDetalleId(null)
           cargar()
         }}
-      />
-
-      <EventoModal
-        abierto={modalAbierto}
-        eventoId={editandoId}
-        onCerrar={() => {
-          setModalAbierto(false)
-          setEditandoId(null)
-        }}
-        onGuardado={alGuardar}
       />
     </div>
   )

@@ -21,6 +21,7 @@ import { IconoBasura, IconoBusqueda, IconoCalendario, IconoChevron, IconoCopiar,
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import { construirResumenEvento } from '../../utils/resumenEvento'
 import { useConfiguracion } from '../../context/ConfiguracionContext'
+import { useAuth } from '../../context/AuthContext'
 import EventoModal from './EventoModal'
 import EventoDetalleModal from './EventoDetalleModal'
 import ConfirmarEliminacion from '../../components/ui/ConfirmarEliminacion'
@@ -46,6 +47,8 @@ export default function EventosList() {
   const [eliminando, setEliminando] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const { configuracion } = useConfiguracion() ?? {}
+  const { rol } = useAuth()
+  const esAdmin = rol === 'admin'
 
   const cargar = async () => {
     try {
@@ -201,6 +204,18 @@ export default function EventosList() {
 
   const renderEstado = (evento) => {
     const config = ESTADOS[evento.estado ?? 'pendiente']
+
+    if (!esAdmin) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${config.badge}`}
+        >
+          <span className={`size-1.5 rounded-full ${config.punto}`} />
+          {config.etiqueta}
+        </span>
+      )
+    }
+
     return (
       <button
         type="button"
@@ -233,22 +248,26 @@ export default function EventosList() {
       >
         <IconoOjo className="size-4" />
       </button>
-      <button
-        type="button"
-        onClick={() => abrirEdicion(evento.id)}
-        aria-label="Editar evento"
-        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
-      >
-        <IconoLapiz className="size-4" />
-      </button>
-      <button
-        type="button"
-        onClick={() => setAEliminar(evento)}
-        aria-label="Eliminar evento"
-        className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
-      >
-        <IconoBasura className="size-4" />
-      </button>
+      {esAdmin && (
+        <>
+          <button
+            type="button"
+            onClick={() => abrirEdicion(evento.id)}
+            aria-label="Editar evento"
+            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+          >
+            <IconoLapiz className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setAEliminar(evento)}
+            aria-label="Eliminar evento"
+            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+          >
+            <IconoBasura className="size-4" />
+          </button>
+        </>
+      )}
     </div>
   )
 
@@ -264,27 +283,33 @@ export default function EventosList() {
           <h1 className="font-serif text-3xl font-bold text-white">Eventos</h1>
           <p className="mt-1 text-sm text-slate-400">Registro de toques y contrataciones</p>
         </div>
-        <BotonPrimario onClick={abrirCreacion}>
-          <IconoMas className="size-4" />
-          Nuevo evento
-        </BotonPrimario>
+        {esAdmin && (
+          <BotonPrimario onClick={abrirCreacion}>
+            <IconoMas className="size-4" />
+            Nuevo evento
+          </BotonPrimario>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TarjetaEstadistica
-          titulo="Ganancia papayera · este mes"
-          valor={formatearPrecio(gananciaMes)}
-          detalle={`${realizadosMes.length} ${realizadosMes.length === 1 ? 'realizado' : 'realizados'}`}
-          icono={IconoDinero}
-          destacada
-        />
-        <TarjetaEstadistica
-          titulo="Ingresos generales · este mes"
-          valor={formatearPrecio(valorMes)}
-          detalle={`Falta por cobrar ${formatearPrecio(faltaMes)}`}
-          icono={IconoLista}
-          progreso={valorMes > 0 ? (cobradoMes / valorMes) * 100 : 0}
-        />
+        {esAdmin && (
+          <>
+            <TarjetaEstadistica
+              titulo="Ganancia papayera · este mes"
+              valor={formatearPrecio(gananciaMes)}
+              detalle={`${realizadosMes.length} ${realizadosMes.length === 1 ? 'realizado' : 'realizados'}`}
+              icono={IconoDinero}
+              destacada
+            />
+            <TarjetaEstadistica
+              titulo="Ingresos generales · este mes"
+              valor={formatearPrecio(valorMes)}
+              detalle={`Falta por cobrar ${formatearPrecio(faltaMes)}`}
+              icono={IconoLista}
+              progreso={valorMes > 0 ? (cobradoMes / valorMes) * 100 : 0}
+            />
+          </>
+        )}
         <TarjetaEstadistica titulo="Eventos este mes" valor={eventosDelMes.length} icono={IconoCalendario} />
         <TarjetaEstadistica titulo="Por confirmar" valor={porConfirmar.length} icono={IconoReloj} />
       </div>

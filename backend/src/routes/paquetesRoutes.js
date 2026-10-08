@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { supabase } from '../config/supabaseClient.js'
+import { requiereAdmin } from '../middleware/requiereAdmin.js'
 
 const router = Router()
 
@@ -17,7 +18,7 @@ router.get('/', async (_req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', requiereAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('paquetes')
@@ -32,7 +33,7 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requiereAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('paquetes')
@@ -48,7 +49,7 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requiereAdmin, async (req, res) => {
   try {
     const { error } = await supabase
       .from('paquetes')

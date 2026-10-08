@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import RutaProtegida from '../components/RutaProtegida'
 import RutaAdmin from '../components/RutaAdmin'
+import RutaModulo from '../components/RutaModulo'
+import RutaInicio from '../components/RutaInicio'
 import AppLayout from '../components/layout/AppLayout'
 import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
@@ -16,10 +18,10 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route element={<RutaProtegida><AppLayout /></RutaProtegida>}>
-        <Route index element={<Dashboard />} />
-        <Route path="eventos" element={<EventosList />} />
-        <Route path="calendario" element={<Calendario />} />
-        <Route path="paquetes" element={<Paquetes />} />
+        <Route index element={<RutaInicio><Dashboard /></RutaInicio>} />
+        <Route path="eventos" element={<RutaModulo modulo="eventos"><EventosList /></RutaModulo>} />
+        <Route path="calendario" element={<RutaModulo modulo="calendario"><Calendario /></RutaModulo>} />
+        <Route path="paquetes" element={<RutaModulo modulo="paquetes"><Paquetes /></RutaModulo>} />
         <Route path="usuarios" element={<Usuarios />} />
         <Route path="configuracion" element={<RutaAdmin><Configuracion /></RutaAdmin>} />
         <Route path="recordatorios" element={<RutaAdmin><Recordatorios /></RutaAdmin>} />

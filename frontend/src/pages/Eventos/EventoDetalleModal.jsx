@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../context/AuthContext'
 import { eliminarEvento, getEventoPorId } from '../../services/eventosService'
 import { formatearDuracion, formatearFechaHora, formatearPrecio, itemsDeIncluye, precioEfectivo } from '../../utils/formatters'
+import { construirResumenEvento } from '../../utils/resumenEvento'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import Modal from '../../components/ui/Modal'
 import ConfirmarEliminacion from '../../components/ui/ConfirmarEliminacion'
 import EstadoBadge from '../../components/ui/EstadoBadge'
 import {
   IconoBasura,
+  IconoCopiar,
   IconoCalendario,
   IconoCampana,
   IconoCheck,
@@ -48,6 +51,8 @@ function FilaTelefono({ numero, etiqueta }) {
 }
 
 export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEliminado }) {
+  const { rol } = useAuth()
+  const esAdmin = rol === 'admin'
   const [evento, setEvento] = useState(null)
   const [pidiendoEliminar, setPidiendoEliminar] = useState(false)
   const [eliminando, setEliminando] = useState(false)
@@ -72,6 +77,16 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
       cancelado = true
     }
   }, [eventoId])
+
+  const copiarResumen = async () => {
+    try {
+      await navigator.clipboard.writeText(construirResumenEvento(evento, evento?.paquetes))
+      toast.success('Resumen copiado')
+    } catch (err) {
+      console.error(err)
+      toast.error('No se pudo copiar el resumen')
+    }
+  }
 
   const confirmarEliminar = async () => {
     setEliminando(true)
@@ -260,20 +275,32 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
           <div className="flex flex-wrap justify-end gap-3 border-t border-white/5 pt-5">
             <button
               type="button"
-              onClick={() => setPidiendoEliminar(true)}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
+              onClick={copiarResumen}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 ring-1 ring-white/10 transition hover:bg-white/5 hover:text-amber-400"
             >
-              <IconoBasura className="size-4" />
-              Eliminar
+              <IconoCopiar className="size-4" />
+              Copiar resumen
             </button>
-            <button
-              type="button"
-              onClick={() => onEditar(evento.id)}
-              className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
-            >
-              <IconoLapiz className="size-4" />
-              Editar evento
-            </button>
+            {esAdmin && (
+              <button
+                type="button"
+                onClick={() => setPidiendoEliminar(true)}
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 ring-1 ring-white/10 transition hover:bg-red-500/10 hover:text-red-400"
+              >
+                <IconoBasura className="size-4" />
+                Eliminar
+              </button>
+            )}
+            {esAdmin && onEditar && (
+              <button
+                type="button"
+                onClick={() => onEditar(evento.id)}
+                className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+              >
+                <IconoLapiz className="size-4" />
+                Editar evento
+              </button>
+            )}
           </div>
         </div>
       )}

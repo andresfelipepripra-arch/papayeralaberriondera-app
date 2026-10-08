@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { supabase } from '../config/supabaseClient.js'
+import { requiereAdmin } from '../middleware/requiereAdmin.js'
 
 const router = Router()
 
@@ -33,7 +34,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', requiereAdmin, async (req, res) => {
   if (typeof req.body.nombre_cliente !== 'string' || !req.body.nombre_cliente.trim()) {
     return res.status(400).json({ error: 'El nombre del cliente es obligatorio' })
   }
@@ -52,7 +53,7 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requiereAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('eventos')
@@ -68,7 +69,7 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requiereAdmin, async (req, res) => {
   try {
     const { error } = await supabase
       .from('eventos')

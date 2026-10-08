@@ -34,3 +34,12 @@ export async function cambiarRolUsuario(id, rol) {
     throw error
   }
 }
+
+export async function actualizarModulosUsuario(id, modulos) {
+  try {
+    const { data } = await api.put(`/usuarios/${id}/modulos`, { modulos })
+    return data
+  } catch (error) {
+    throw error
+  }
+}
