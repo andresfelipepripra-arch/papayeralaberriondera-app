@@ -85,6 +85,34 @@ export function formatearDuracion(horas) {
   return min === 0 ? textoHoras : `${textoHoras} ${min} min`
 }
 
+// El evento puede tener su propia duración (ej. se extendió a 2 horas);
+// si no la tiene, se usa la duración del paquete contratado.
+export function duracionEfectiva(evento, paquete) {
+  const valor = evento?.duracion_horas ?? paquete?.duracion_horas
+  const numero = Number(valor)
+  return valor != null && Number.isFinite(numero) ? numero : null
+}
+
+// Convierte horas + minutos sueltos (como se capturan en el formulario) a la
+// fracción decimal de hora que se guarda en duracion_horas (0.75 = 45 min).
+export function duracionADecimal(horas, minutos) {
+  const h = Number(horas) || 0
+  const min = Number(minutos) || 0
+  const total = h + min / 60
+  return total > 0 ? total : null
+}
+
+// Inverso de duracionADecimal: separa la fracción decimal de hora guardada en
+// duracion_horas en los campos de horas y minutos del formulario.
+export function decimalADuracion(duracionHorasDecimal) {
+  const totalMinutos = duracionHorasDecimal ? Math.round(Number(duracionHorasDecimal) * 60) : 0
+  const minutosParte = totalMinutos % 60
+  return {
+    duracionHoras: totalMinutos >= 60 ? String(Math.floor(totalMinutos / 60)) : '',
+    duracionMinutos: minutosParte > 0 ? String(minutosParte) : '',
+  }
+}
+
 // La ganancia es propia de cada evento; si no tiene una, se usa la general de configuración.
 export function gananciaDeEvento(evento, configuracion) {
   const valor = evento.ganancia_evento ?? configuracion?.ganancia_por_evento ?? 70000

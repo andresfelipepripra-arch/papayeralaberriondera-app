@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
 import { eliminarEvento, getEventoPorId } from '../../services/eventosService'
-import { formatearDuracion, formatearFechaHora, formatearPrecio, itemsDeIncluye, precioEfectivo } from '../../utils/formatters'
+import {
+  duracionEfectiva,
+  formatearDuracion,
+  formatearFechaHora,
+  formatearPrecio,
+  itemsDeIncluye,
+  precioEfectivo,
+} from '../../utils/formatters'
 import { construirResumenEvento } from '../../utils/resumenEvento'
 import { colorAvatar, inicialesDe } from '../../utils/avatar'
 import Modal from '../../components/ui/Modal'
@@ -218,7 +225,7 @@ export default function EventoDetalleModal({ eventoId, onCerrar, onEditar, onEli
                   </div>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <Dato etiqueta="Precio base">{formatearPrecio(paquete.precio)}</Dato>
-                    <Dato etiqueta="Duración">{formatearDuracion(paquete.duracion_horas) ?? 'Sin definir'}</Dato>
+                    <Dato etiqueta="Duración">{formatearDuracion(duracionEfectiva(evento, paquete)) ?? 'Sin definir'}</Dato>
                   </div>
                 </div>
 

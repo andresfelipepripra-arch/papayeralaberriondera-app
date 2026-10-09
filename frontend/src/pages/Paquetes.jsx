@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { paquetesService } from '../services/paquetesService'
 import { useAuth } from '../context/AuthContext'
 import { getEventos } from '../services/eventosService'
-import { formatearDuracion, formatearPrecio, itemsDeIncluye } from '../utils/formatters'
+import { decimalADuracion, duracionADecimal, formatearDuracion, formatearPrecio, itemsDeIncluye } from '../utils/formatters'
 import Modal from '../components/ui/Modal'
 import BotonPrimario from '../components/ui/BotonPrimario'
 import InputField from '../components/ui/InputField'
@@ -12,22 +12,6 @@ import ConfirmarEliminacion from '../components/ui/ConfirmarEliminacion'
 import { IconoBasura, IconoCheck, IconoCubo, IconoEstrella, IconoLapiz, IconoMas, IconoOjo } from '../components/ui/Iconos'
 
 const vacio = { nombre: '', descripcion: '', precio: '', duracionHoras: '', duracionMinutos: '', incluye: '' }
-
-function duracionADecimal(horas, minutos) {
-  const h = Number(horas) || 0
-  const min = Number(minutos) || 0
-  const total = h + min / 60
-  return total > 0 ? total : null
-}
-
-function decimalADuracion(duracionHorasDecimal) {
-  const totalMinutos = duracionHorasDecimal ? Math.round(Number(duracionHorasDecimal) * 60) : 0
-  const minutosParte = totalMinutos % 60
-  return {
-    duracionHoras: totalMinutos >= 60 ? String(Math.floor(totalMinutos / 60)) : '',
-    duracionMinutos: minutosParte > 0 ? String(minutosParte) : '',
-  }
-}
 
 export default function Paquetes() {
   const { rol } = useAuth()

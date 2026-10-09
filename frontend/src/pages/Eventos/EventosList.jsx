@@ -6,6 +6,7 @@ import { actualizarEvento, eliminarEvento, getEventos } from '../../services/eve
 import { paquetesService } from '../../services/paquetesService'
 import {
   formatearDia,
+  duracionEfectiva,
   formatearDuracion,
   gananciaDeEvento,
   formatearHora,
@@ -28,6 +29,18 @@ import ConfirmarEliminacion from '../../components/ui/ConfirmarEliminacion'
 
 const POR_PAGINA = 8
 const ALTURA_MENU_ESTADOS = 150
+
+// Confirmados primero (lo que viene y ya está asegurado), luego pendientes y
+// cancelados, y los realizados al final porque ya pasaron. Dentro de cada
+// grupo, el más próximo en fecha va primero.
+const PRIORIDAD_ESTADO = { confirmado: 0, pendiente: 1, cancelado: 2, realizado: 3 }
+
+function compararEventos(a, b) {
+  const prioridadA = PRIORIDAD_ESTADO[a.estado ?? 'pendiente'] ?? 1
+  const prioridadB = PRIORIDAD_ESTADO[b.estado ?? 'pendiente'] ?? 1
+  if (prioridadA !== prioridadB) return prioridadA - prioridadB
+  return new Date(a.fecha) - new Date(b.fecha)
+}
 const ANCHO_MENU_ESTADOS = 160
 
 export default function EventosList() {
@@ -196,7 +209,7 @@ export default function EventosList() {
       evento.nombre_cliente?.toLowerCase().includes(textoBusqueda) ||
       evento.ubicacion?.toLowerCase().includes(textoBusqueda)
     return coincideEstado && coincideCliente && coincideBusqueda
-  })
+  }).sort(compararEventos)
 
   const totalPaginas = Math.max(1, Math.ceil(eventosFiltrados.length / POR_PAGINA))
   const paginaActual = Math.min(pagina, totalPaginas)
@@ -453,8 +466,8 @@ export default function EventosList() {
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 text-slate-300">
                           {paquete?.nombre ?? evento.paquetes?.nombre ?? 'Sin paquete'}
-                          {formatearDuracion(paquete?.duracion_horas) && (
-                            <span className="text-xs text-slate-500"> · {formatearDuracion(paquete.duracion_horas)}</span>
+                          {formatearDuracion(duracionEfectiva(evento, paquete)) && (
+                            <span className="text-xs text-slate-500"> · {formatearDuracion(duracionEfectiva(evento, paquete))}</span>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 font-medium text-white">

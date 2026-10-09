@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { actualizarEvento, crearEvento, getEventoPorId } from '../../services/eventosService'
 import { paquetesService } from '../../services/paquetesService'
-import { formatearDuracion, formatearFechaHora, formatearPrecio } from '../../utils/formatters'
+import {
+  decimalADuracion,
+  duracionADecimal,
+  formatearDuracion,
+  formatearFechaHora,
+  formatearPrecio,
+} from '../../utils/formatters'
 import { ESTADOS, ORDEN_ESTADOS } from '../../utils/estados'
 import Modal from '../../components/ui/Modal'
 import BotonPrimario from '../../components/ui/BotonPrimario'
@@ -23,6 +29,8 @@ const vacio = {
   nombre_telefono_alterno: '',
   telefono_alterno: '',
   paquete_id: '',
+  duracionHoras: '',
+  duracionMinutos: '',
   tipo_evento: '',
   precio: '',
   abonado: '',
@@ -95,6 +103,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
             nombre_telefono_alterno: evento.nombre_telefono_alterno ?? '',
             telefono_alterno: evento.telefono_alterno ?? '',
             paquete_id: evento.paquete_id ?? '',
+            ...decimalADuracion(evento.duracion_horas ?? paqueteActual?.duracion_horas),
             tipo_evento: evento.tipo_evento ?? '',
             precio: evento.precio ?? paqueteActual?.precio ?? '',
             abonado: evento.abonado ?? 0,
@@ -130,7 +139,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
   const handlePaqueteChange = (e) => {
     const paqueteId = e.target.value
     const paquete = paquetes.find((p) => p.id === paqueteId)
-    setForm({ ...form, paquete_id: paqueteId, precio: paquete?.precio ?? '' })
+    setForm({ ...form, paquete_id: paqueteId, precio: paquete?.precio ?? '', ...decimalADuracion(paquete?.duracion_horas) })
   }
 
   const siguiente = () => {
@@ -165,6 +174,7 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
       nombre_telefono_alterno: form.nombre_telefono_alterno.trim() || null,
       telefono_alterno: form.telefono_alterno || null,
       paquete_id: form.paquete_id,
+      duracion_horas: duracionADecimal(form.duracionHoras, form.duracionMinutos),
       tipo_evento: form.tipo_evento.trim() || null,
       precio: form.precio !== '' ? Number(form.precio) : null,
       abonado: Number(form.abonado) || 0,
@@ -348,6 +358,48 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
                 </div>
               </div>
 
+              <div>
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="duracionMinutos" className={estiloLabel}>
+                      Duración: minutos
+                    </label>
+                    <input
+                      id="duracionMinutos"
+                      name="duracionMinutos"
+                      type="number"
+                      step="5"
+                      min="0"
+                      placeholder="45"
+                      value={form.duracionMinutos}
+                      onChange={handleChange}
+                      className={estiloCampo}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="duracionHoras" className={estiloLabel}>
+                      + horas <span className="font-normal text-slate-500">(opcional)</span>
+                    </label>
+                    <input
+                      id="duracionHoras"
+                      name="duracionHoras"
+                      type="number"
+                      step="1"
+                      min="0"
+                      placeholder="0"
+                      value={form.duracionHoras}
+                      onChange={handleChange}
+                      className={estiloCampo}
+                    />
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  {formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))
+                    ? `Se llena con la del paquete (${formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))}), pero puedes ajustarla si el evento se extiende, ej. a 2 horas.`
+                    : 'Se llena con la duración del paquete al seleccionarlo.'}
+                </p>
+              </div>
+
               <div className="grid gap-5 sm:grid-cols-3">
                 <div>
                   <label htmlFor="precio" className={estiloLabel}>
@@ -466,6 +518,9 @@ export default function EventoModal({ abierto, eventoId, onCerrar, onGuardado })
               <TarjetaResumen titulo="Paquete y cobro">
                 <p className="font-semibold text-white">{paqueteSeleccionado?.nombre ?? 'Sin paquete'}</p>
                 {form.tipo_evento && <p className="text-slate-400">{form.tipo_evento}</p>}
+                {formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos)) && (
+                  <p className="text-slate-400">{formatearDuracion(duracionADecimal(form.duracionHoras, form.duracionMinutos))}</p>
+                )}
                 <p>
                   Ganancia papayera <span className="font-semibold text-white">{formatearPrecio(Number(form.ganancia_evento) || 0)}</span>
                 </p>
