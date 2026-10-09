@@ -36,6 +36,26 @@ function partesDelDia(fecha) {
   return { dia, mes }
 }
 
+// duracion_horas se guarda como fracción decimal de una hora (0.75 = 45 min).
+function formatearDuracion(horas) {
+  const valor = Number(horas)
+  if (horas === null || horas === undefined || horas === '' || !Number.isFinite(valor) || valor <= 0) return null
+
+  const totalMinutos = Math.round(valor * 60)
+  const h = Math.floor(totalMinutos / 60)
+  const min = totalMinutos % 60
+
+  if (h === 0) return `${min} min`
+  const textoHoras = `${h} ${h === 1 ? 'hora' : 'horas'}`
+  return min === 0 ? textoHoras : `${textoHoras} ${min} min`
+}
+
+// El evento puede tener su propia duración (ej. se extendió a 2 horas);
+// si no la tiene, se usa la del paquete contratado.
+function duracionDelEvento(evento) {
+  return formatearDuracion(evento.duracion_horas ?? evento.paquetes?.duracion_horas)
+}
+
 function lugarDelEvento(evento) {
   return [evento.ciudad, evento.barrio, evento.ubicacion].filter(Boolean).join(' · ') || 'Por confirmar'
 }
@@ -130,6 +150,7 @@ function filasDelEvento(evento, cliente) {
     filaDato('Lugar', escapar(lugarDelEvento(evento))),
     filaDato('Teléfonos', telefonosDelEvento(evento, cliente)),
     evento.tipo_evento ? filaDato('Tipo', escapar(evento.tipo_evento)) : '',
+    duracionDelEvento(evento) ? filaDato('Duración', escapar(duracionDelEvento(evento))) : '',
     filaDato('Estado', ETIQUETAS_ESTADO[evento.estado ?? 'pendiente'] ?? escapar(evento.estado)),
   ].join('')
 }

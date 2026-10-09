@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { precioEfectivo } from './formatters'
+import { duracionEfectiva, formatearDuracion, precioEfectivo } from './formatters'
 
 const enMil = (valor) => Math.round(Number(valor) / 1000)
 
@@ -27,11 +27,13 @@ export function construirResumenEvento(evento, paquete) {
 
   return [
     `${dia.charAt(0).toUpperCase() + dia.slice(1)} ${format(fecha, 'd MMMM', { locale: es })}`,
-    [evento.barrio, horaCorta(fecha)].filter(Boolean).join(' - '),
+    [evento.barrio || evento.ciudad, horaCorta(fecha)].filter(Boolean).join(' - '),
     `Dirección: ${evento.ubicacion ?? ''}`,
     ...(lineasContacto.length ? lineasContacto.map((linea, i) => (i === 0 ? `Contacto: ${linea}` : linea)) : ['Contacto:']),
     `Tipo de evento: ${evento.tipo_evento ?? ''}`,
-    `Formato: ${paquete?.nombre ?? evento.paquetes?.nombre ?? ''}`,
+    [`Formato: ${paquete?.nombre ?? evento.paquetes?.nombre ?? ''}`, formatearDuracion(duracionEfectiva(evento, paquete))]
+      .filter(Boolean)
+      .join(' · '),
     `Cobrar: ${enMil(falta)}, total ${enMil(total)}, ${abonado > 0 ? `ya abono ${enMil(abonado)} mil` : 'ya abono 0'}`,
     'Pagos:',
   ].join('\n')

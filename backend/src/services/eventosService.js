@@ -23,7 +23,7 @@ export async function listarEventosVigentes(maxDias) {
 
   const { data, error } = await supabase
     .from('eventos')
-    .select('*')
+    .select('*, paquetes (duracion_horas)')
     .gte('fecha', inicioDelDiaOperativoActualISO())
     .lte('fecha', fechaLimite.toISOString())
     .neq('estado', 'cancelado')

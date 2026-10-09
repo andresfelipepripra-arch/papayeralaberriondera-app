@@ -152,7 +152,7 @@ router.get('/vista-previa', requiereAdmin, async (req, res) => {
 
     const { data: eventos, error } = await supabase
       .from('eventos')
-      .select('*')
+      .select('*, paquetes (duracion_horas)')
       .gte('fecha', inicioDelDiaOperativoActualISO())
       .neq('estado', 'cancelado')
       .order('fecha', { ascending: true })
