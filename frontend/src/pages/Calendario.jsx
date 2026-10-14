@@ -173,10 +173,13 @@ export default function Calendario() {
                   {format(dia, 'd')}
                 </span>
 
-                <div className="mt-1 flex flex-wrap justify-center gap-0.5 sm:hidden">
-                  {eventosDelDia.slice(0, 3).map((evento) => (
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-0.5 sm:hidden">
+                  {eventosDelDia.slice(0, 6).map((evento) => (
                     <span key={evento.id} className={`size-1.5 rounded-full ${ESTADOS[evento.estado ?? 'pendiente'].punto}`} />
                   ))}
+                  {eventosDelDia.length > 6 && (
+                    <span className="text-[9px] font-semibold leading-none text-slate-400">+{eventosDelDia.length - 6}</span>
+                  )}
                 </div>
 
                 <div className="mt-1 hidden space-y-1 sm:block">

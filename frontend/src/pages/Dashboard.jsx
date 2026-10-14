@@ -450,23 +450,23 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setVerDetalleId(evento.id)}
-                    className="flex w-full items-center gap-4 rounded-lg px-2 py-3 text-left transition hover:bg-white/5"
+                    className="grid w-full grid-cols-[auto_1fr_minmax(0,8rem)] items-center gap-3 rounded-lg px-2 py-3 text-left transition hover:bg-white/5 sm:grid-cols-[auto_1fr_minmax(0,9rem)]"
                   >
-                    <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-slate-950/60">
+                    <div className="flex size-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-slate-950/60">
                       <span className="text-lg font-bold leading-none text-amber-400">{formatearDia(evento.fecha)}</span>
                       <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                         {formatearMesCorto(evento.fecha)}
                       </span>
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-white">{evento.nombre_cliente ?? 'Sin cliente'}</p>
                       <p className="truncate text-xs text-slate-400">
                         {evento.ubicacion ?? 'Sin ubicación'} · {formatearHora(evento.fecha)}
                       </p>
                     </div>
-                    <div className="flex min-w-0 max-w-[40%] flex-col items-end gap-1">
+                    <div className="flex min-w-0 flex-col items-end gap-1">
                       <EstadoBadge estado={estadoDe(evento)} />
-                      <p className="w-full truncate text-right text-xs text-slate-400">
+                      <p className="max-w-full truncate text-right text-xs text-slate-400">
                         {evento.paquetes?.nombre ?? 'Sin paquete'} · {formatearPrecio(precioDe(evento))}
                       </p>
                     </div>
@@ -527,9 +527,9 @@ export default function Dashboard() {
                 />
                 <ul className="min-w-0 flex-1 space-y-2 text-xs">
                   {segmentosDonut.map((segmento) => (
-                    <li key={segmento.id} className="flex items-center gap-2">
-                      <span className={`size-2 shrink-0 rounded-full ${segmento.punto}`} />
-                      <span className="min-w-0 flex-1 truncate text-slate-300">{segmento.nombre}</span>
+                    <li key={segmento.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                      <span className={`size-2 rounded-full ${segmento.punto}`} />
+                      <span className="min-w-0 truncate text-slate-300">{segmento.nombre}</span>
                       <span className="font-semibold text-white">
                         {Math.round((segmento.valor / totalDonut) * 100)}%
                       </span>
