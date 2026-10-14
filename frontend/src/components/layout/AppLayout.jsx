@@ -33,7 +33,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 scheme-dark">
+    <div className="min-h-screen overflow-x-hidden bg-slate-950 text-slate-200 scheme-dark">
       <Sidebar
         nombre={nombre}
         abierto={menuAbierto}

@@ -464,11 +464,11 @@ export default function Dashboard() {
                         {evento.ubicacion ?? 'Sin ubicación'} · {formatearHora(evento.fecha)}
                       </p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="flex min-w-0 max-w-[40%] flex-col items-end gap-1">
                       <EstadoBadge estado={estadoDe(evento)} />
-                      <span className="text-xs text-slate-400">
+                      <p className="w-full truncate text-right text-xs text-slate-400">
                         {evento.paquetes?.nombre ?? 'Sin paquete'} · {formatearPrecio(precioDe(evento))}
-                      </span>
+                      </p>
                     </div>
                   </button>
                 </li>
