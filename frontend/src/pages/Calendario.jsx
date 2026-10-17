@@ -23,6 +23,7 @@ import EventoDetalleModal from './Eventos/EventoDetalleModal'
 const DIAS_SEMANA = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
 const opcionesSemana = { weekStartsOn: 1 }
 const claveDia = (fecha) => format(fecha, 'yyyy-MM-dd')
+const lugarEvento = (evento) => [evento.barrio, evento.ciudad].filter(Boolean).join(' · ')
 
 export default function Calendario() {
   const [eventos, setEventos] = useState([])
@@ -188,10 +189,13 @@ export default function Calendario() {
                       key={evento.id}
                       type="button"
                       onClick={() => setVerDetalleId(evento.id)}
-                      title={`${formatearHora(evento.fecha)} · ${evento.nombre_cliente ?? 'Evento'}`}
-                      className={`block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
+                      title={`${formatearHora(evento.fecha)} · ${evento.nombre_cliente ?? 'Evento'}${lugarEvento(evento) ? ` · ${lugarEvento(evento)}` : ''}`}
+                      className={`block w-full rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
                     >
-                      {evento.nombre_cliente ?? evento.ubicacion ?? 'Evento'}
+                      <span className="block truncate">{evento.nombre_cliente ?? 'Evento'}</span>
+                      {lugarEvento(evento) && (
+                        <span className="block truncate text-[10px] font-normal opacity-75">{lugarEvento(evento)}</span>
+                      )}
                     </button>
                   ))}
                   {eventosDelDia.length > 3 && (
@@ -217,7 +221,12 @@ export default function Calendario() {
                 onClick={() => setVerDetalleId(evento.id)}
                 className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition hover:opacity-80 ${ESTADOS[evento.estado ?? 'pendiente'].badge}`}
               >
-                <span className="truncate font-semibold">{evento.nombre_cliente ?? 'Evento'}</span>
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{evento.nombre_cliente ?? 'Evento'}</span>
+                  {lugarEvento(evento) && (
+                    <span className="block truncate text-xs opacity-75">{lugarEvento(evento)}</span>
+                  )}
+                </span>
                 <span className="shrink-0 text-xs">{formatearHora(evento.fecha)}</span>
               </button>
             ))
